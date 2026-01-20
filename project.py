@@ -25,7 +25,7 @@ def wavepacket(t, dt, dx, a, k):
     # Setting parameters
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
-    grid = np.arange(-100, 100+dx, dx)
+    grid = np.arange(-5, 5+dx, dx)
     Nx = len(grid)
     Nt = len(times)
 
@@ -79,14 +79,35 @@ def wavepacket(t, dt, dx, a, k):
 
     return(grid, psi_n1)
 
-inputs = list(map(float, input('Enter time period (t), time step (dt), grid spacing (dx), normalised Gaussian width (a) and wave number (k): ').split()))
-grid, psi_n1 = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4])
-print(grid, psi_n1)
+T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
+inputs = list(map(float, input('Enter time step (dt), grid spacing (dx), normalised Gaussian width (a) and wave number (k): ').split()))
 
 # 2D plot
-plt.plot(grid, np.abs(psi_n1)**2)
-plt.xlabel('Position (x)')
-plt.ylabel('Probability density (|ψ|^2)')
-plt.ylim([0, 0.85])
-plt.title('Time progression of the 1D Schrodinger equation.')
+for m in range(9):
+    grid, psi_n1 = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3])
+    plt.subplot(3, 3, m+1)
+    plt.plot(grid, np.abs(psi_n1)**2)
+    plt.xlabel('Position (x)')
+    plt.ylabel('(|ψ|^2)')
+    plt.ylim([0, 0.85])
+    plt.title('t ='+str(round(T_values[m], 3)))
+
+plt.tight_layout()
 plt.savefig('numerical_1Dschrodinger.pdf')
+plt.show()
+
+# 3D plot
+fig = plt.figure()
+for m in range(9):
+    ax = fig.add_subplot()
+    grid, psi_n1 = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3])
+    plt.subplot(3, 3, m+1)
+    plt.plot(grid, np.abs(psi_n1)**2)
+    plt.xlabel('Position (x)')
+    plt.ylabel('(|ψ|^2)')
+    plt.ylim([0, 0.85])
+    plt.title('t ='+str(round(T_values[m], 3)))
+
+plt.tight_layout()
+plt.savefig('numerical_1Dschrodinger.pdf')
+plt.show()
