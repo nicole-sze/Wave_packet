@@ -32,56 +32,70 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
     Nx = len(grid_x)
     Nt = len(times)
 
-    interior_Nx = Nx-2
+    # Meshgrid for 2D array
+    x, y = np.meshgrid(grid_x, grid_y)
+    psi_n = (2*a/np.pi)**0.25*(2*b/np.pi)**0.25*np.exp(-a*x**2-b*y**2)*np.exp(1j*(kx*x+ky*y))  # Initial condition
+    psi_n[0,:] = psi_n[-1,:] = 0  # Boundary condition
+    psi_n[:,0] = psi_n[:,-1] = 0  # Boundary condition
+
+    interior_Nx = (Nx-2)**2
     alpha = dt/(2*dx**2)
     
     # Setting values for matrix_a
     lowerA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
     diagA = np.full(interior_Nx, 1+1j*alpha+1j*alpha, dtype=complex)
     upperA = np.full(interior_Nx-1, -1j*alpha_x/2, dtype=complex)
-    otherA = np.full(interior_Nx, -1j*alpha/2, dtype=complex)
+    otherA = np.full(interior_Nx/2.0, -1j*alpha/2, dtype=complex)
 
     # Setting values for matrix_b
     lowerB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
     diagB = np.full(interior_Nx, 1-1j*alpha-1j*alpha, dtype=complex)
     upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
-    otherB = np.full(interior_Nx, 1j*alpha/2, dtype=complex)
+    otherB = np.full(interior_Nx/2.0, 1j*alpha/2, dtype=complex)
 
-    psi_n = (2*a/np.pi)**0.25*(2*b/np.pi)**0.25*np.exp(-a*grid_x**2-b*grid_y**2)*np.exp(1j*(kx*grid_x+ky*grid_y))  # Initial condition
-    psi_n[0,:] = psi_n[-1,:] = 0  # Boundary condition
-    psi_n[:,0] = psi_n[:,-1] = 0  # Boundary condition
-    psi_n1 = np.zeros(Nx, dtype=complex)
+    rhs = diagB*psi_n[1:-1]
+    rhs[1:] += lowerB*psi_n[1:-2]
+    rhs[:-1] += upperB*psi_n[2:-1]
 
-    for i in range(Nt):
-        rhs = diagB*psi_n[1:-1]
-        rhs[1:] += lowerB*psi_n[1:-2]
-        rhs[:-1] += upperB*psi_n[2:-1]
+    # Setting arrays to solve pentadiagonal matrix
+    A = np.zeros(interior_Nx, dtype=complex)
+    B = np.zeros(interior_Nx-1, dtype=complex)
+    C = np.zeros(interior_Nx-2, dtype=complex)
+    D = np.zeros(interior_Nx, dtype=complex)
+    E = np.zeros(interior_Nx, dtype=complex)
+    psi_n1 = np.zeros(interior_Nx, dtype=complex)
 
-        # To reset matices every time
-        A = lowerA.copy()
-        B = diagA.copy()
-        C = upperA.copy()
+    # Start solving for pentadiagonal matrix
+    A[0] = diagA[0]
+    B[0] = upperA[0]/diag[0]
+    C[0] = otherA[0]/diag[0]
 
-        # Performing the Thomas Algorithm
-        # Forward elimination
-        for j in range(1, interior_Nx):
-            ratio = A[j-1]/B[j-1]
-            B[j] = B[j] - ratio*C[j-1]
-            rhs[j] = rhs[j] - ratio*rhs[j-1]
+    A[1] = diagA[1]-upperA[1]*B[0]
+    B[1] = (upperA[1]-otherA[0]*B[0])/A[1]
+    C[1] = otherA[1]/A[1]
 
-            # Saftey check:
-            if abs(B[j-1]) < 1e-12:
-                print("Zero pivot encountered — Thomas algorithm fails.")
+    for i in range(2, interior_Nx-2):
+        A[i] = diagA[i]-otherA[i-2]*C[i-2]-A[i-1]*B[i-1]**2
+        B[i] = (upperA[i]-otherA[i-1]*B[i-1])/A[i]
+        C[i] = otherA[i]/A[i]
 
-        # Back substitution
-        interior_psi = np.zeros(interior_Nx, dtype=complex)
-        interior_psi[-1] = rhs[-1]/B[-1]  # Computes last unknown
-        for n in range(interior_Nx-2, -1, -1):
-            interior_psi[n] = (rhs[n] - C[n]*interior_psi[n+1])/B[n]
+    A[-2] = diagA[-2]-otherA[-4]*C[-4]-A[-3]*B[-3]**2
+    B[-2] = (upperA[-2]-otherA[-3]*B[-3])/A[-2]
+    A[-1] = diagA[-1]-otherA[-3]*C[-3]-A[-2]*B[-2]**2
 
-        psi_n1[0] = psi_n1[-1] = 0
-        psi_n1[1:-1] = interior_psi
-        psi_n = psi_n1.copy()
+    # Solving for the right hand side
+    E[0] = rhs[0]
+    E[1] = rhs[1]-B[0]*E[0]
+    for j in range(2, interior_Nx):
+        E[j] = rhs[j]-B[j-1]*E[j-1]-C[j-2]*E[j-2]
+
+    D = E/A
+
+    # Back substitution
+    psi_n1[-1] = D[-1]
+    psi_n1[-2] = D[-2]-B[-2]*psi_n1[-1]
+    for k in range(interior_Nx-3, -1, -1):
+        psi_n1[k] = D[k]-B[k]*psi_n1[k+1]-C[k]*psi_n1[k+2]
 
     return(grid_x, grid_y, psi_n1)
 

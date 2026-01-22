@@ -90,6 +90,7 @@ for m in range(9):
     plt.ylabel('(|ψ|^2)')
     plt.ylim([0, 0.85])
     plt.title('t ='+str(round(T_values[m], 3)))
+    plt.grid(True, which='both')
 
 plt.tight_layout()
 plt.savefig('2Dnumerical_1Dschrodinger.pdf')
