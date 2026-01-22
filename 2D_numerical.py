@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Script to solve 2D time-dependent Schrodinger equation numerically
+
 def wavepacket(t, dt, dx, a, b, kx, ky):
     '''
         Solving the 2D time-dependent Schrodinger equation using the Crank-Nicolson
@@ -31,12 +32,9 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
     grid_y = np.arange(-5, 5+dx, dx)
     Nx = len(grid_x)
     Nt = len(times)
-
-    # Meshgrid for 2D array
-    x, y = np.meshgrid(grid_x, grid_y)
-    psi_n = (2*a/np.pi)**0.25*(2*b/np.pi)**0.25*np.exp(-a*x**2-b*y**2)*np.exp(1j*(kx*x+ky*y))  # Initial condition
-    psi_n[0,:] = psi_n[-1,:] = 0  # Boundary condition
-    psi_n[:,0] = psi_n[:,-1] = 0  # Boundary condition
+    
+    psi_n = (2*a/np.pi)**0.25*(2*b/np.pi)**0.25*np.exp(-a*grid_x**2-b*grid_y**2)*np.exp(1j*(kx*grid_x+ky*grid_y))  # Initial condition
+    psi_n[0] = psi_n[-1] = 0  # Boundary condition
 
     interior_Nx = (Nx-2)**2
     alpha = dt/(2*dx**2)
@@ -44,18 +42,19 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
     # Setting values for matrix_a
     lowerA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
     diagA = np.full(interior_Nx, 1+1j*alpha+1j*alpha, dtype=complex)
-    upperA = np.full(interior_Nx-1, -1j*alpha_x/2, dtype=complex)
-    otherA = np.full(interior_Nx/2.0, -1j*alpha/2, dtype=complex)
+    upperA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
+    otherA = np.full(int(round(interior_Nx/2.0,0)), -1j*alpha/2, dtype=complex)
 
     # Setting values for matrix_b
     lowerB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
     diagB = np.full(interior_Nx, 1-1j*alpha-1j*alpha, dtype=complex)
     upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
-    otherB = np.full(interior_Nx/2.0, 1j*alpha/2, dtype=complex)
+    otherB = np.full(int(round(interior_Nx/2.0,0)), 1j*alpha/2, dtype=complex)
 
     rhs = diagB*psi_n[1:-1]
     rhs[1:] += lowerB*psi_n[1:-2]
     rhs[:-1] += upperB*psi_n[2:-1]
+    
 
     # Setting arrays to solve pentadiagonal matrix
     A = np.zeros(interior_Nx, dtype=complex)
@@ -97,21 +96,23 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
     for k in range(interior_Nx-3, -1, -1):
         psi_n1[k] = D[k]-B[k]*psi_n1[k+1]-C[k]*psi_n1[k+2]
 
-    return(grid_x, grid_y, psi_n1)
+    return (psi_n1, grid_x, grid_y)
 
-T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
-inputs = list(map(float, input('Enter time step (dt), grid spacing (x direction) (dx), normalised Gaussian width (x direction) (a), normalised Gaussian width (y direction) (b), wave number (k): ').split()))
+inputs = list(map(float, input('Enter time period (t), time step (dt), grid spacing (x direction) (dx), normalised Gaussian width (x direction) (a), normalised Gaussian width (y direction) (b), wave number (kx), and wave number (ky): ').split()))
+
+# Setting 2D matrix for plotting
+psi_n1, grid_x, grid_y = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6])
+array = np.array([len(grid_x), len(grid_x)])
+for i in range(len(grid_x)):
+    for j in range(len(grid)):
+        array[i,j] = psi_n1[j + i*len(grid_x)]
 
 # 3D plot
 fig = plt.figure()
 psi_n1z = np.zeros((501,501))
 for n in range(9):
     ax = fig.add_subplot(3, 3, n+1, projection="3d")
-    gridx, psi_n1x = wavepacket(T_values[n], inputs[0], inputs[1], inputs[2], inputs[3])
-    gridy, psi_n1y = wavepacket(T_values[n], inputs[0], inputs[1], inputs[2], inputs[3])
-    for counter in range(len(gridx)):
-        for counter2 in range(len(gridy)):
-            psi_n1z[counter][counter2] = (np.abs(psi_n1x[counter] * psi_n1y[counter2]))**2
+    xs, ys, z = wavepacket(T_values[n], inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5])
     ax.plot_surface(gridx, gridy, psi_n1z, cmap=cm.coolwarm, linewidth=0)
     ax.set_xlabel('Position (x)')
     ax.set_ylabel('Position (y)')
