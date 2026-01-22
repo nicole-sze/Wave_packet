@@ -17,7 +17,6 @@ def wavepacket(t, dt, dx, a, k):
         k = wave number
 
         Outputs:
-        times = Time grid
         grid = Spatial grid
         psi_n1 = Wave function
     '''
@@ -93,21 +92,5 @@ for m in range(9):
     plt.title('t ='+str(round(T_values[m], 3)))
 
 plt.tight_layout()
-plt.savefig('numerical_1Dschrodinger.pdf')
-plt.show()
-
-# 3D plot
-fig = plt.figure()
-for m in range(9):
-    ax = fig.add_subplot()
-    grid, psi_n1 = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3])
-    plt.subplot(3, 3, m+1)
-    plt.plot(grid, np.abs(psi_n1)**2)
-    plt.xlabel('Position (x)')
-    plt.ylabel('(|ψ|^2)')
-    plt.ylim([0, 0.85])
-    plt.title('t ='+str(round(T_values[m], 3)))
-
-plt.tight_layout()
-plt.savefig('numerical_1Dschrodinger.pdf')
+plt.savefig('2Dnumerical_1Dschrodinger.pdf')
 plt.show()
