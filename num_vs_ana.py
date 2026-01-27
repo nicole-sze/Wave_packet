@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Script to solve 1D time-dependent Schrodinger equation numerically
+# Script to compare 1d numerical to analytical
 def wavepacket(t, dt, dx, a, k):
     '''
         Solving the 1D time-dependent Schrodinger equation using the Crank-Nicolson
@@ -30,7 +30,7 @@ def wavepacket(t, dt, dx, a, k):
 
     interior_Nx = Nx-2
     alpha = dt/(2*dx**2)
-    
+   
     # Setting values for matrix_a
     lowerA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
     diagA = np.full(interior_Nx, 1+1j*alpha, dtype=complex)
@@ -40,8 +40,12 @@ def wavepacket(t, dt, dx, a, k):
     lowerB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
     diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex)
     upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
+       
+        # Initial condition
+    psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid) 
 
-    psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid)  # Initial condition
+       
+
     psi_n[0] = psi_n[-1] = 0  # Boundary condition
     psi_n1 = np.zeros(Nx, dtype=complex)
 
@@ -78,6 +82,10 @@ def wavepacket(t, dt, dx, a, k):
 
     return(grid, psi_n1)
 
+# Analytical solution
+def psix(x,t,a):
+        return np.abs((2*a/np.pi)**(1/4)*1/np.sqrt(1+2j*a*t)*np.exp(-a*x**2/(np.sqrt(1+2j*a*t))))**2
+
 T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
 inputs = list(map(float, input('Enter time step (dt), grid spacing (dx), normalised Gaussian width (a) and wave number (k): ').split()))
 
@@ -85,13 +93,13 @@ inputs = list(map(float, input('Enter time step (dt), grid spacing (dx), normali
 for m in range(9):
     grid, psi_n1 = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3])
     plt.subplot(3, 3, m+1)
-    plt.plot(grid, np.abs(psi_n1)**2)
+    plt.plot(grid, np.abs(psi_n1)**2, label = 'numerical solution')
+    plt.plot(grid, np.abs(psi_n1)**2-psix(grid,T_values[m],inputs[2]), label = 'numerical solution')
     plt.xlabel('Position (x)')
     plt.ylabel('(|ψ|^2)')
     plt.ylim([0, 0.85])
+    plt.plot(grid, psix(grid,T_values[m],inputs[2]), label = 'Analytical solution')
     plt.title('t ='+str(round(T_values[m], 3)))
-    plt.grid(True, which='both')
-
 plt.tight_layout()
-plt.savefig('2D_nopotential.pdf')
+plt.savefig('num_vs_ana.pdf')
 plt.show()

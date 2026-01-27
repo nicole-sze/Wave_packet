@@ -28,23 +28,23 @@ def wavepacket(t, dt, dx, a, k, v0):
    Nx = len(grid)
    Nt = len(times)
        
+
+       
    interior_Nx = Nx-2
    alpha = dt/(2*dx**2)
        
-    # defining vector which contains potential for each space index
-
-    # p = centre of barrier(units of dx)
-    # b = width of barrier(units of dx and even number)
+        # defining vector which contains potential for each space index
+        # p = centre of barrier(units of dx)
+        # b = width of barrier(units of dx and even number)
    p = 37
    b = 8
-    # Loops through each space index and inserts corresponding potential
+        # Loops through each space index and inserts corresponding potential
    v = np.zeros(interior_Nx)
    for i in range(interior_Nx):
        if i < p - b/2 or i > p + b/2:
            v[i] = 0
        else:
            v[i] = v0
-        
                
         # Setting values for matrix_a
    lowerA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
@@ -92,21 +92,23 @@ def wavepacket(t, dt, dx, a, k, v0):
        psi_n1[1:-1] = interior_psi
        psi_n = psi_n1.copy()
 
-   return(grid, psi_n1)
+   return(grid, psi_n1, p, b, dx)
 
 T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
 inputs = list(map(float, input('Enter time step (dt), grid spacing (dx), normalised Gaussian width (a) and wave number (k), barrier potential (v0): ').split()))
 
 # 2D plot
-for m in range(9):
-   grid, psi_n1 = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3], inputs[4])
+for m in range(len(T_values)):
+   grid, psi_n1, p, b, dx = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3], inputs[4])
    plt.subplot(3, 3, m+1)
    plt.plot(grid, np.abs(psi_n1)**2)
+   ax = plt.gca()
+   rect1 = plt.Rectangle(((p-b/2)*dx-5, 0), b*dx, 1, edgecolor='orange', facecolor='none')
+   ax.add_patch(rect1)
    plt.xlabel('Position (x)')
    plt.ylabel('(|ψ|^2)')
-   plt.ylim([0, 0.85])
    plt.title('t ='+str(round(T_values[m], 3)))
 
 plt.tight_layout()
-plt.savefig('2Dnumerical_1Dschrodinger.pdf')
+plt.savefig('1D_potential.pdf')
 plt.show()
