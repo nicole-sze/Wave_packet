@@ -1,0 +1,103 @@
+#! /usr/bin/env python3
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.sparse.linalg import spsolve
+from matplotlib import cm
+from scipy.sparse import csc_matrix
+
+
+# Script to solve 2D time-dependent Schrodinger equation numerically
+
+def wavepacket(t, dt, dx, a, b, kx, ky):
+    '''
+        Solving the 2D time-dependent Schrodinger equation using the 
+        Crank-Nicolson numerical method.
+
+        Variables:
+        t = Time period (s)
+        dt = Time step
+        dx = Grid spacing
+        a = Normalised Gaussian width in x direction
+        b = Normalised Gaussian width in y direction
+        kx = wave number in x direction
+        ky = wave number in y direction
+
+        Outputs:
+        psi_n1 = Wave function
+        grid_x = Spatial grid in x direction
+        grid_y = Spatial grid in y direction
+    '''
+
+    # Setting parameters
+    # Upper limit is given as 10+dx since arange generates a half-open interval
+    times = np.arange(0, t+dt, dt)
+    grid_x = np.arange(-5, 5+dx, dx)
+    grid_y = np.arange(-5, 5+dx, dx)
+    Nx = len(grid_x)  # Same as len(grid_y)
+    Nt = len(times)
+
+    # Making psi_n into a 2D matrix for plotting
+    psi_n = np.zeros((Nx, Nx), dtype = complex)
+    for i, xi in enumerate(grid_x):
+        for j, xj in enumerate(grid_y):
+            psi_n[i, j] = (2*a/np.pi)**0.25*(2*b/np.pi)**0.25*np.exp(-a*xi**2-b*xj**2)*np.exp(1j*(kx*xi+ky*xj))  # Initial condition
+    psi_n[0, :] = psi_n[-1, :] = 0  # Boundary condition
+    psi_n[:, 0] = psi_n[:, -1] = 0  # Boundary condition
+
+    # Converting psi_n into a 1D for calculations
+    psi_n = psi_n.flatten()
+
+    alpha = dt/(2*dx**2)
+    N = Nx*Nx  # To accomodate flattened psi_n
+
+    # Setting up matrix A
+    array_A = np.zeros((N,N),dtype=complex)
+    for s in range(N):
+        for r in range(N):
+            if s == r:
+                array_A[s,r] = complex(1+1j*alpha+1j*alpha)
+            elif s == r + 1 or s == r - 1:
+                array_A[s,r] = complex(-1j*alpha/2)
+            elif s == r + Nx or s == r - Nx:
+                array_A[s,r] = complex(-1j*alpha/2)
+
+    # Setting up matrix 
+    array_B = np.zeros((N,N),dtype=complex)
+    for n in range(N):
+        for m in range(N):
+            if n == m:
+                array_B[n,m] = complex(1-1j*alpha-1j*alpha)
+            elif n == m + 1 or n == m - 1:
+                array_B[n,m] = complex(1j*alpha/2)
+            elif n == m + Nx or n == m - Nx:
+                array_B[n,m] = complex(1j*alpha/2)
+
+    psi_n1 = psi_n.copy()
+    
+    for k in range(Nt):
+        vector_b = array_B @ psi_n1
+        psi_n1 = spsolve(csc_matrix(array_A),vector_b)
+    
+    # Converting psi_n1 to 2D for plotting
+    psi_n1 = psi_n1.reshape((Nx, Nx))
+    
+    return (psi_n1, grid_x, grid_y)
+
+inputs = list(map(float, input('Enter time period (t), time step (dt), grid spacing (x direction) (dx), normalised Gaussian width (x direction) (a), normalised Gaussian width (y direction) (b), wave number in x direction (kx), and wave number in y direction (ky): ').split()))
+
+# 3D plot
+psi_n1, grid_x, grid_y = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6])
+x, y = np.meshgrid(grid_x, grid_y)
+z = np.abs(psi_n1)**2
+
+fig = plt.figure()
+ax = fig.add_subplot(projection="3d")
+ax.plot_surface(x, y, z, cmap=cm.coolwarm, linewidth=0)
+ax.set_xlabel('Position (x)')
+ax.set_ylabel('Position (y)')
+ax.set_zlabel('(|ψ|^2)')
+ax.set_zlim([0, 0.85])
+plt.title("t = "+str(inputs[0]))
+plt.tight_layout()
+plt.savefig('3D_1Dschrodinger'+str(inputs[0])+'.pdf')
+plt.show()
