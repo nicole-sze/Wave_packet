@@ -1,97 +1,115 @@
 #! /usr/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.sparse.linalg import spsolve
+from matplotlib import cm
+from scipy.sparse import csc_matrix
 
-# Script to solve 1D time-dependent Schrodinger equation numerically
-def wavepacket(t, dt, dx, a, k):
+
+# Script to solve 2D time-dependent Schrodinger equation numerically
+
+def wavepacket(t, dt, dx, a, k1, k2, v0):
     '''
-        Solving the 1D time-dependent Schrodinger equation using the Crank-Nicolson
-        numerical method. This results in a large, complex matrix which is then computed
-        with the Thomas Algorithm.
+        Solving the 2D time-dependent Schrodinger equation using the 
+        Crank-Nicolson numerical method.
 
         Variables:
         t = Time period (s)
         dt = Time step
         dx = Grid spacing
-        a = Normalised Gaussian width
-        k = wave number
+        a = Normalised Gaussian width in x direction
+        b = Normalised Gaussian width in y direction
+        kx = wave number in x direction
+        ky = wave number in y direction
 
         Outputs:
-        grid = Spatial grid
         psi_n1 = Wave function
+        grid_x = Spatial grid in x direction
+        grid_y = Spatial grid in y direction
     '''
 
     # Setting parameters
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
-    grid = np.arange(-5, 5+dx, dx)
-    Nx = len(grid)
+    grid_x1 = np.arange(-5, 5+dx, dx)
+    grid_x2 = np.arange(-5, 5+dx, dx)
+    Nx = len(grid_x1)  # Same as len(grid_y)
     Nt = len(times)
 
-    interior_Nx = Nx-2
+    # Making psi_n into a 2D matrix for plotting
+    psi_n = np.zeros((Nx, Nx), dtype = complex)
+    for i, xi in enumerate(grid_x1):
+        for j, xj in enumerate(grid_x2):
+            psi_n[i, j] = (2*a/np.pi)**0.5*np.exp(-a*((xi+2)**2+(xj-2)**2))*np.exp(1j*(k1*xi + k2*xj))  # Initial condition
+    psi_n[0, :] = psi_n[-1, :] = 0  # Boundary condition
+    psi_n[:, 0] = psi_n[:, -1] = 0  # Boundary condition
+
+    # Converting psi_n into a 1D for calculations
+    psi_n = psi_n.flatten()
+
     alpha = dt/(2*dx**2)
+    N = Nx*Nx  # To accomodate flattened psi_n
+
+    # Creating potential matrix
+    alpha = 1
+    v = np.zeros((Nx, Nx))
+    for q, qi in enumerate(grid_x1):
+        for w, wi in enumerate(grid_x2):
+            v[q, w] = v0*np.exp(-alpha*np.abs(qi-wi)**2)
+
+    v = v.flatten()
+
+    # Setting up matrix A
+    array_A = np.zeros((N,N),dtype=complex)
+    for s in range(N):
+        for r in range(N):
+            if s == r:
+                array_A[s,r] = complex(1+1j*alpha+1j*alpha + 1j*dt*v[r]/2)
+            elif s == r + 1 or s == r - 1:
+                array_A[s,r] = complex(-1j*alpha/2)
+            elif s == r + Nx or s == r - Nx:
+                array_A[s,r] = complex(-1j*alpha/2)
+
+    # Setting up matrix 
+    array_B = np.zeros((N,N),dtype=complex)
+    for n in range(N):
+        for m in range(N):
+            if n == m:
+                array_B[n,m] = complex(1-1j*alpha-1j*alpha - 1j*dt*v[m]/2)
+            elif n == m + 1 or n == m - 1:
+                array_B[n,m] = complex(1j*alpha/2)
+            elif n == m + Nx or n == m - Nx:
+                array_B[n,m] = complex(1j*alpha/2)
+        
+    psi_n1 = psi_n.copy()
+
+    for k in range(Nt):
+        vector_b = array_B @ psi_n1
+        psi_n1 = spsolve(csc_matrix(array_A),vector_b)
+        psi_n1[0] = 0
+
+        # Boundary conditions
+        for q in range(N):
+            if q <= Nx  or q >= (Nx*(Nx-1)):
+                psi_n1[q] = 0
+            elif ((q%Nx)==0):
+                psi_n1[q] = 0
+                psi_n1[q-1] = 0
+         
+    # Converting psi_n1 to 2D for plotting
+    psi_n1 = psi_n1.reshape((Nx, Nx))
     
-    # Setting values for matrix_a
-    lowerA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
-    diagA = np.full(interior_Nx, 1+1j*alpha, dtype=complex)
-    upperA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
+    return (psi_n1, grid_x1, grid_x2)
 
-    # Setting values for matrix_b
-    lowerB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
-    diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex)
-    upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
+inputs = list(map(float, input('Time period (t), Time step (dt), grid spacing (x direction) (dx), normalised Gaussian width (x direction) (a), and wave number for x1 and x2, potential (v0): ').split()))
 
-    psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid)  # Initial condition
-    psi_n[0] = psi_n[-1] = 0  # Boundary condition
-    psi_n1 = np.zeros(Nx, dtype=complex)
+# 3D plot
+psi_n1, grid_x, grid_y = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6])
+x, y = np.meshgrid(grid_x, grid_y)
+z = np.abs(psi_n1)**2
 
-    for i in range(Nt):
-        rhs = diagB*psi_n[1:-1]
-        rhs[1:] += lowerB*psi_n[1:-2]
-        rhs[:-1] += upperB*psi_n[2:-1]
-
-        # To reset matices every time
-        A = lowerA.copy()
-        B = diagA.copy()
-        C = upperA.copy()
-
-        # Performing the Thomas Algorithm
-        # Forward elimination
-        for j in range(1, interior_Nx):
-            ratio = A[j-1]/B[j-1]
-            B[j] = B[j] - ratio*C[j-1]
-            rhs[j] = rhs[j] - ratio*rhs[j-1]
-
-            # Saftey check:
-            if abs(B[j-1]) < 1e-12:
-                print("Zero pivot encountered — Thomas algorithm fails.")
-
-        # Back substitution
-        interior_psi = np.zeros(interior_Nx, dtype=complex)
-        interior_psi[-1] = rhs[-1]/B[-1]  # Computes last unknown
-        for n in range(interior_Nx-2, -1, -1):
-            interior_psi[n] = (rhs[n] - C[n]*interior_psi[n+1])/B[n]
-
-        psi_n1[0] = psi_n1[-1] = 0
-        psi_n1[1:-1] = interior_psi
-        psi_n = psi_n1.copy()
-
-    return(grid, psi_n1)
-
-T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
-inputs = list(map(float, input('Enter time step (dt), grid spacing (dx), normalised Gaussian width (a) and wave number (k): ').split()))
-
-# 2D plot
-for m in range(9):
-    grid, psi_n1 = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3])
-    plt.subplot(3, 3, m+1)
-    plt.plot(grid, np.abs(psi_n1)**2)
-    plt.xlabel('Position (x)')
-    plt.ylabel('(|ψ|^2)')
-    plt.ylim([0, 0.85])
-    plt.title('t ='+str(round(T_values[m], 3)))
-    plt.grid(True, which='both')
-
-plt.tight_layout()
-plt.savefig('2D_1Dschrodinger.pdf')
+plt.contourf(x, y, z)
+plt.xlabel('x1')
+plt.ylabel('x2')
+plt.savefig('collision.pdf')
 plt.show()

@@ -123,5 +123,5 @@ for counter in range(n):
     ax.set_zlim([0, 0.85])
     plt.title("t = "+str(round(times[counter],2)))
 plt.tight_layout()
-plt.savefig('single_slit9times.pdf')
+plt.savefig('single_slit.pdf')
 plt.show()
