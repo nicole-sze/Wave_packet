@@ -8,7 +8,7 @@ from scipy.sparse import csc_matrix
 
 # Script to solve 2D time-dependent Schrodinger equation numerically
 
-def wavepacket(t, dt, dx, a, b, kx, ky):
+def wavepacket(t, dt, dx, a, b, ky):
     '''
         Solving the 2D time-dependent Schrodinger equation using the 
         Crank-Nicolson numerical method.
@@ -40,7 +40,7 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
     psi_n = np.zeros((Nx, Nx), dtype = complex)
     for i, xi in enumerate(grid_x):
         for j, xj in enumerate(grid_y):
-            psi_n[i, j] = (2*a/np.pi)**0.25*(2*b/np.pi)**0.25*np.exp(-a*xi**2-b*xj**2)*np.exp(1j*(kx*xi+ky*xj))  # Initial condition
+            psi_n[i, j] = (2*a/np.pi)**0.25*(2*b/np.pi)**0.25*np.exp(-a*xi**2-b*xj**2)*np.exp(1j*ky*xj)  # Initial condition
     psi_n[0, :] = psi_n[-1, :] = 0  # Boundary condition
     psi_n[:, 0] = psi_n[:, -1] = 0  # Boundary condition
 
@@ -50,12 +50,28 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
     alpha = dt/(2*dx**2)
     N = Nx*Nx  # To accomodate flattened psi_n
 
+    # defining vector which contains potential for each space index
+    # x_1 = centre of barrier(units of dx)
+    # x_2 = width of barrier(units of dx and even number)
+    # y_1 = width of barrier in y (units of dx)
+    x_1 = Nx/2.0
+    x_2 = 8
+    y_1 = 8
+    # Loops through each space index and inserts corresponding potential
+    v = np.zeros(N)
+    for i in range(N):
+        if i < x_1 - x_2/2 or i > x_1 + x_2/2:
+            if i > y_1 - x_2/2 or i < y_1 + x_2/2:
+                v[i] = 0
+        else:
+            v[i] = 2000000000
+
     # Setting up matrix A
     array_A = np.zeros((N,N),dtype=complex)
     for s in range(N):
         for r in range(N):
             if s == r:
-                array_A[s,r] = complex(1+1j*alpha+1j*alpha)
+                array_A[s,r] = complex(1+1j*alpha+1j*alpha) + 1j*dt*v[r]/2
             elif s == r + 1 or s == r - 1:
                 array_A[s,r] = complex(-1j*alpha/2)
             elif s == r + Nx or s == r - Nx:
@@ -66,7 +82,7 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
     for n in range(N):
         for m in range(N):
             if n == m:
-                array_B[n,m] = complex(1-1j*alpha-1j*alpha)
+                array_B[n,m] = complex(1-1j*alpha-1j*alpha) - 1j*dt*v[r]/2
             elif n == m + 1 or n == m - 1:
                 array_B[n,m] = complex(1j*alpha/2)
             elif n == m + Nx or n == m - Nx:
@@ -83,10 +99,10 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
     
     return (psi_n1, grid_x, grid_y)
 
-inputs = list(map(float, input('Enter time period (t), time step (dt), grid spacing (x direction) (dx), normalised Gaussian width (x direction) (a), normalised Gaussian width (y direction) (b), wave number in x direction (kx), and wave number in y direction (ky): ').split()))
+inputs = list(map(float, input('Enter time period (t), time step (dt), grid spacing (x direction) (dx), normalised Gaussian width (x direction) (a), normalised Gaussian width (y direction) (b) and wave number in y direction (ky): ').split()))
 
 # 3D plot
-psi_n1, grid_x, grid_y = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6])
+psi_n1, grid_x, grid_y = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5])
 x, y = np.meshgrid(grid_x, grid_y)
 z = np.abs(psi_n1)**2
 
@@ -99,5 +115,5 @@ ax.set_zlabel('(|ψ|^2)')
 ax.set_zlim([0, 0.85])
 plt.title("t = "+str(inputs[0]))
 plt.tight_layout()
-plt.savefig('3D_1Dschrodinger'+str(inputs[0])+'.pdf')
+plt.savefig('single_slit'+str(inputs[0])+'.pdf')
 plt.show()
