@@ -5,20 +5,24 @@ import matplotlib.pyplot as plt
 # Script to solve 1D time-dependent Schrodinger equation numerically with potential barrier
 def wavepacket(t, dt, dx, a, k, v0):
    '''
-       Solving the 1D time-dependent Schrodinger equation using the Crank-Nicolson
-       numerical method. This results in a large, complex matrix which is then computed
-       with the Thomas Algorithm.
+       Solving the 1D time-dependent Schrodinger equation with potential using the 
+       Crank-Nicolson numerical method. This results in a large, complex matrix which 
+       is then computed with the Thomas Algorithm.
 
        Variables:
        t = Time period (s)
        dt = Time step
        dx = Grid spacing
        a = Normalised Gaussian width
-       k = wave number
+       k = Wave number
+       v0 = Potential
 
        Outputs:
        grid = Spatial grid
        psi_n1 = Wave function
+       p = Centre of potential barrier (units of dx)
+       b = width of potential barrier (units of dx)
+       dx = Grid spacing
    '''
 
    # Setting parameters
@@ -28,17 +32,16 @@ def wavepacket(t, dt, dx, a, k, v0):
    Nx = len(grid)
    Nt = len(times)
        
-
-       
    interior_Nx = Nx-2
    alpha = dt/(2*dx**2)
        
-        # defining vector which contains potential for each space index
-        # p = centre of barrier(units of dx)
-        # b = width of barrier(units of dx and even number)
+    # defining vector which contains potential for each space index
+    # p = centre of barrier(units of dx)
+    # b = width of barrier(units of dx and even number)
    p = 37
    b = 8
-        # Loops through each space index and inserts corresponding potential
+    
+    # Loops through each space index and inserts corresponding potential
    v = np.zeros(interior_Nx)
    for i in range(interior_Nx):
        if i < p - b/2 or i > p + b/2:
@@ -46,19 +49,18 @@ def wavepacket(t, dt, dx, a, k, v0):
        else:
            v[i] = v0
                
-        # Setting values for matrix_a
+    # Setting values for matrix_a
    lowerA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
    diagA = np.full(interior_Nx, 1+1j*alpha, dtype=complex) + 1j*dt*v/2
    upperA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
 
-        # Setting values for matrix_b
+    # Setting values for matrix_b
    lowerB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
    diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex) - 1j*dt*v/2
    upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)   
-   # Initial condition
-   psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid) 
-   # Boundary condition
-   psi_n[0] = psi_n[-1] = 0 
+
+   psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid)  # Initial condition
+   psi_n[0] = psi_n[-1] = 0  # Boundary condition
    psi_n1 = np.zeros(Nx, dtype=complex)
 
    for i in range(Nt):
@@ -97,7 +99,7 @@ def wavepacket(t, dt, dx, a, k, v0):
 T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
 inputs = list(map(float, input('Enter time step (dt), grid spacing (dx), normalised Gaussian width (a) and wave number (k), barrier potential (v0): ').split()))
 
-# 2D plot
+# 2D plot with 9 different time periods
 for m in range(len(T_values)):
    grid, psi_n1, p, b, dx = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3], inputs[4])
    plt.subplot(3, 3, m+1)

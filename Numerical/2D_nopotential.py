@@ -6,12 +6,12 @@ from matplotlib import cm
 from scipy.sparse import csc_matrix
 
 
-# Script to solve 2D time-dependent Schrodinger equation numerically
+# Script to solve 2D time-dependent Schrodinger equation wihout potential numerically
 
 def wavepacket(t, dt, dx, a, b, kx, ky):
     '''
-        Solving the 2D time-dependent Schrodinger equation using the 
-        Crank-Nicolson numerical method.
+        Solving the 2D time-dependent Schrodinger equation without
+        potential using the Crank-Nicolson numerical method.
 
         Variables:
         t = Time period (s)
@@ -19,8 +19,8 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
         dx = Grid spacing
         a = Normalised Gaussian width in x direction
         b = Normalised Gaussian width in y direction
-        kx = wave number in x direction
-        ky = wave number in y direction
+        kx = Wave number in x direction
+        ky = Wave number in y direction
 
         Outputs:
         psi_n1 = Wave function

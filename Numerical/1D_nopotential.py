@@ -2,19 +2,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Script to solve 1D time-dependent Schrodinger equation numerically
+# Script to solve 1D time-dependent Schrodinger equation without potential numerically
 def wavepacket(t, dt, dx, a, k):
     '''
-        Solving the 1D time-dependent Schrodinger equation using the Crank-Nicolson
-        numerical method. This results in a large, complex matrix which is then computed
-        with the Thomas Algorithm.
+        Solving the 1D time-dependent Schrodinger equation without potential using the 
+        Crank-Nicolson numerical method. This results in a large, complex matrix which 
+        is then computed with the Thomas Algorithm.
 
         Variables:
         t = Time period (s)
         dt = Time step
         dx = Grid spacing
         a = Normalised Gaussian width
-        k = wave number
+        k = Wave number
 
         Outputs:
         grid = Spatial grid
@@ -81,7 +81,7 @@ def wavepacket(t, dt, dx, a, k):
 T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
 inputs = list(map(float, input('Enter time step (dt), grid spacing (dx), normalised Gaussian width (a) and wave number (k): ').split()))
 
-# 2D plot
+# 2D plot with 9 different time periods
 for m in range(9):
     grid, psi_n1 = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3])
     plt.subplot(3, 3, m+1)
@@ -93,5 +93,5 @@ for m in range(9):
     plt.grid(True, which='both')
 
 plt.tight_layout()
-plt.savefig('2D_nopotential.pdf')
+plt.savefig('1D_nopotential.pdf')
 plt.show()

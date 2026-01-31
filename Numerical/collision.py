@@ -2,25 +2,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse.linalg import spsolve
-from matplotlib import cm
 from scipy.sparse import csc_matrix
+from scipy.integrate import simpson
 
 
-# Script to solve 2D time-dependent Schrodinger equation numerically
+# Script to solve the 2 particle Schrodinger equation numerically
 
 def wavepacket(t, dt, dx, a, k1, k2, v0):
     '''
-        Solving the 2D time-dependent Schrodinger equation using the 
-        Crank-Nicolson numerical method.
+        Solving the 2 particle Schrodinger equation using 
+        the Crank-Nicolson numerical method.
 
         Variables:
         t = Time period (s)
         dt = Time step
         dx = Grid spacing
-        a = Normalised Gaussian width in x direction
-        b = Normalised Gaussian width in y direction
-        kx = wave number in x direction
-        ky = wave number in y direction
+        a = Normalised Gaussian width
+        k1 = 1st wave's wave number
+        k2 = 2nd wave's wave number
 
         Outputs:
         psi_n1 = Wave function
@@ -103,13 +102,31 @@ def wavepacket(t, dt, dx, a, k1, k2, v0):
 
 inputs = list(map(float, input('Time period (t), Time step (dt), grid spacing (x direction) (dx), normalised Gaussian width (x direction) (a), and wave number for x1 and x2, potential (v0): ').split()))
 
-# 3D plot
-psi_n1, grid_x, grid_y = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6])
-x, y = np.meshgrid(grid_x, grid_y)
+# Contour plot
+psi_n1, grid_x1, grid_x2 = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6])
+x1, x2 = np.meshgrid(grid_x1, grid_x2)
 z = np.abs(psi_n1)**2
 
-plt.contourf(x, y, z)
+plt.figure()
+plt.contourf(x1, x2, z)
 plt.xlabel('x1')
 plt.ylabel('x2')
-plt.savefig('collision.pdf')
+plt.title('2-particle Schrodinger equation probability density')
+plt.savefig('collision_contour.pdf')
+plt.show()
+
+# Separate into 2 waves by marginalisation
+# i.e. integrating over probability density with respect to corresponding wave
+wave1 = simpson(z, x=grid_x2, axis=1)
+wave2 = simpson(z, x=grid_x1, axis=0)
+
+# 2D plot
+plt.figure()
+plt.plot(grid_x1, wave1, label='1st wave (x1)')
+plt.plot(grid_x2, wave2, label='2nd wave (x2)')
+plt.xlabel('Position (x)')
+plt.ylabel('(|ψ|^2)')
+plt.title('2-particle Schrodinger equation collision')
+plt.legend()
+plt.savefig('collision_2D.pdf')
 plt.show()
