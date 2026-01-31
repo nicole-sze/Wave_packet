@@ -116,7 +116,7 @@ plt.savefig('collision_contour.pdf')
 plt.show()
 
 # Separate into 2 waves by marginalisation
-# i.e. integrating over probability density with respect to corresponding wave
+# i.e. integrating over probability density with respect to the other wave
 wave1 = simpson(z, x=grid_x2, axis=1)
 wave2 = simpson(z, x=grid_x1, axis=0)
 
