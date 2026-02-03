@@ -1,13 +1,14 @@
 #! /usr/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.integrate import simpson
 
-# Script to compare 1d numerical to analytical
+# Script to compare the 1D TDSE numerical to analytical
+# Numerical function 
 def wavepacket(t, dt, dx, a, k):
     '''
-        Solving the 1D time-dependent Schrodinger equation using the Crank-Nicolson
-        numerical method. This results in a large, complex matrix which is then computed
-        with the Thomas Algorithm.
+        Comparing the numerical and analytical 1D time dependent 
+        Schrodinger equation results.
 
         Variables:
         t = Time period (s)
@@ -30,7 +31,7 @@ def wavepacket(t, dt, dx, a, k):
 
     interior_Nx = Nx-2
     alpha = dt/(2*dx**2)
-   
+
     # Setting values for matrix_a
     lowerA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
     diagA = np.full(interior_Nx, 1+1j*alpha, dtype=complex)
@@ -40,11 +41,9 @@ def wavepacket(t, dt, dx, a, k):
     lowerB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
     diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex)
     upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
-       
-        # Initial condition
-    psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid) 
 
-       
+    # Initial condition
+    psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid) 
 
     psi_n[0] = psi_n[-1] = 0  # Boundary condition
     psi_n1 = np.zeros(Nx, dtype=complex)
@@ -84,21 +83,29 @@ def wavepacket(t, dt, dx, a, k):
 
 # Analytical solution
 def psix(x,t,a):
-        return np.abs((2*a/np.pi)**(1/4)*1/np.sqrt(1+2j*a*t)*np.exp(-a*x**2/(np.sqrt(1+2j*a*t))))**2
+    return np.abs((2*a/np.pi)**(1/4)*1/np.sqrt(1+2j*a*t)*np.exp(-a*x**2/(1+2j*a*t)))**2
 
 T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
 inputs = list(map(float, input('Enter time step (dt), grid spacing (dx), normalised Gaussian width (a) and wave number (k): ').split()))
 
+grid, psi_n1 = wavepacket(0, inputs[0], inputs[1], inputs[2], inputs[3])
+print(f'Initial analytical normalisation: {simpson(psix(grid, 0, inputs[2]), x=grid):.14f}')
+
 # 2D plot
 for m in range(9):
     grid, psi_n1 = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3])
+
+    initial = psix(grid, 0, inputs[2])
+    prob_density = simpson(np.abs(psi_n1)**2, x=grid)
+    print('Normalisation (t ='+str(round(T_values[m], 3))+f'): {prob_density:.14f}')
+    
     plt.subplot(3, 3, m+1)
-    plt.plot(grid, np.abs(psi_n1)**2, label = 'numerical solution')
-    plt.plot(grid, np.abs(psi_n1)**2-psix(grid,T_values[m],inputs[2]), label = 'numerical solution')
+    plt.plot(grid, np.abs(psi_n1)**2)
+    plt.plot(grid, psix(grid, T_values[m], inputs[2]))
+    plt.plot(grid, np.abs(psi_n1)**2-psix(grid, T_values[m], inputs[2]))
     plt.xlabel('Position (x)')
     plt.ylabel('(|ψ|^2)')
     plt.ylim([0, 0.85])
-    plt.plot(grid, psix(grid,T_values[m],inputs[2]), label = 'Analytical solution')
     plt.title('t ='+str(round(T_values[m], 3)))
 plt.tight_layout()
 plt.savefig('num_vs_ana.pdf')

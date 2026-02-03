@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.integrate import simpson
 
 # Script to solve 1D time-dependent Schrodinger equation numerically with potential barrier
 def wavepacket(t, dt, dx, a, k, v0):
@@ -102,6 +103,10 @@ inputs = list(map(float, input('Enter time step (dt), grid spacing (dx), normali
 # 2D plot with 9 different time periods
 for m in range(len(T_values)):
    grid, psi_n1, p, b, dx = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3], inputs[4])
+
+   prob_density = simpson(np.abs(psi_n1)**2, x=grid)
+   print('Normalisation (t ='+str(round(T_values[m], 3))+f'): {prob_density:.14f}')
+
    plt.subplot(3, 3, m+1)
    plt.plot(grid, np.abs(psi_n1)**2)
    ax = plt.gca()

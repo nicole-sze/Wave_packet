@@ -14,7 +14,7 @@ t = [0,0.25,0.5,0.75]
 a = 1
 
 def psix(x,t,a):
-    return np.abs((2*a/np.pi)**(1/4)*1/np.sqrt(1+2j*a*t)*np.exp(-a*x**2/(np.sqrt(1+2j*a*t))))**2
+    return np.abs((2*a/np.pi)**(1/4)*1/np.sqrt(1+2j*a*t)*np.exp(-a*x**2/(1+2j*a*t)))**2
 
 def psi3d(x,y,t,a):
     return (np.abs((2*a/np.pi)**(1/4)*1/np.sqrt(1+2j*a*t)*np.exp(-a*x**2/(np.sqrt(1+2j*a*t))))**2) * (np.abs((2*a/np.pi)**(1/4)*1/np.sqrt(1+2j*a*t)*np.exp(-a*y**2/(np.sqrt(1+2j*a*t))))**2)
@@ -32,10 +32,6 @@ plt.suptitle("Stationary Wave")
 plt.tight_layout()
 plt.show()
 plt.savefig("1D_stationary.pdf")
-
-
-
-
 
 fig = plt.figure()
 
