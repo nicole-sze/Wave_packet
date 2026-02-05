@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import simpson
 
 # Script to calculate the probability of the particle crossing the barrier as a function of its kinetic energy(1D)
-def wavepacket(t, dt, dx, a, k, v0):
+def wavepacket(t, k, v0):
     '''
         Variables:
         t = Time period (s)
@@ -16,6 +16,10 @@ def wavepacket(t, dt, dx, a, k, v0):
     '''
 
     # Setting parameters
+    dt = 0.01
+    dx = 0.15
+    a = 1
+    
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
     grid = np.arange(-10, 10+dx, dx)
@@ -90,6 +94,6 @@ def wavepacket(t, dt, dx, a, k, v0):
     crossprob = simpson(prob, x=interval)
     return(crossprob)
 
-inputs = list(map(float, input('Enter a mean initial kinetic energy, a time period, and a potential barrier height:').split()))
-k = np.sqrt(inputs[0])
-print("Probability of particle crossing potential barrier:", wavepacket(inputs[1], 0.001, 0.2, 1, k, inputs[2]))
+inputs = list(map(float, input('Enter a time period, kinetic energy and a potential barrier height:').split()))
+k = np.sqrt(inputs[1])
+print("Probability of particle crossing potential barrier:", wavepacket(inputs[0], k, inputs[2]))

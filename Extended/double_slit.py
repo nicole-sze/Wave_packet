@@ -76,7 +76,6 @@ def wavepacket(t, dt, dx, a, b, ky):
         for r in range(N):
             if s == r:
                 array_A[s,r] = complex(1+1j*alpha+1j*alpha) + 1j*dt*v[r]/2
-                #print(array_A[s,r])
             elif s == r + 1 or s == r - 1:
                 array_A[s,r] = complex(-1j*alpha/2)
             elif s == r + Nx or s == r - Nx:
@@ -88,12 +87,11 @@ def wavepacket(t, dt, dx, a, b, ky):
         for m in range(N):
             if n == m:
                 array_B[n,m] = complex(1-1j*alpha-1j*alpha) - 1j*dt*v[m]/2
-                #print(array_B[n,m])
             elif n == m + 1 or n == m - 1:
                 array_B[n,m] = complex(1j*alpha/2)
             elif n == m + Nx or n == m - Nx:
                 array_B[n,m] = complex(1j*alpha/2)
-        
+
     psi_n1 = psi_n.copy()
     
     for k in range(Nt):
@@ -138,7 +136,6 @@ for counter in range(n):
 plt.tight_layout()
 plt.show()
 plt.savefig('double_slit.pdf')
-
 
 fig1 = plt.figure()
 plt.plot(grid_x,inten)

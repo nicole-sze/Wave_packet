@@ -9,7 +9,7 @@ from matplotlib.animation import FuncAnimation
 
 # Script to solve 2D time-dependent Schrodinger equation numerically
 
-def wavepacket(t, dt, dx, a, b, ky):
+def wavepacket(t, dt, dx):
     '''
         Solving the 2D time-dependent Schrodinger equation using the 
         Crank-Nicolson numerical method.
@@ -18,10 +18,6 @@ def wavepacket(t, dt, dx, a, b, ky):
         t = Time period (s)
         dt = Time step
         dx = Grid spacing
-        a = Normalised Gaussian width in x direction
-        b = Normalised Gaussian width in y direction
-        kx = wave number in x direction
-        ky = wave number in y direction
 
         Outputs:
         psi_n1 = Wave function
@@ -29,6 +25,10 @@ def wavepacket(t, dt, dx, a, b, ky):
         grid_y = Spatial grid in y direction
     '''
     # Setting parameters
+    a = 1
+    b = 1
+    ky = 1.5
+    
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
     grid_x = np.arange(-5, 5+dx, dx)
@@ -130,15 +130,13 @@ def wavepacket(t, dt, dx, a, b, ky):
     
     return (psi_nt, grid_x, grid_y, intensity,nn)
 
-inputs = list(map(float, input('Last time, time step (dt), grid spacing (x direction) (dx), normalised Gaussian width (x direction) (a), normalised Gaussian width (y direction) (b) and wave number in y direction (ky): ').split()))
-
+inputs = list(map(float, input('Last time, time step (dt), grid spacing (x direction) (dx): ').split()))
 
 # Precompute the wavefunction over time once
 psi_frames = []
 
-psi_nt, grid_x, grid_y, intensity, noofframes = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5])
+psi_nt, grid_x, grid_y, intensity, noofframes = wavepacket(inputs[0], inputs[1], inputs[2])
 psi_frames = np.copy(psi_nt)
-
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
@@ -147,7 +145,7 @@ x, y = np.meshgrid(grid_x, grid_y)
 
 ax.set_xlabel('Position (x)')
 ax.set_ylabel('Position (y)')
-ax.set_zlabel('|ψ|²')
+ax.set_zlabel('|Ψ|²')
 ax.set_zlim(0, 0.85)
 
 # Creating initial surface:
@@ -166,7 +164,7 @@ def update(frame):
 
 ani = FuncAnimation(fig, update, frames=int(noofframes), interval=1000, blit=False)
 
-ani.save("double_slit.gif", writer="pillow", fps=5)
+ani.save("double_slit.gif", writer="pillow", fps=20)
 plt.close(fig)
 
 for counter2 in range(len(intensity)):

@@ -3,20 +3,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse.linalg import spsolve
 from scipy.sparse import csc_matrix
+from matplotlib.animation import FuncAnimation
+from matplotlib import cm
 from scipy.integrate import simpson
 
+# Script to solve the 2 particle Schrodinger equation with harmonic oscilltor numerically.
 
-# Script to solve the 2 particle Schrodinger equation numerically
-
-def wavepacket(t, k1, k2, v0):
+def wavepacket(t, dt, dx, a, k1, k2, v0, spring):
     '''
         Solving the 2 particle Schrodinger equation using 
         the Crank-Nicolson numerical method.
 
         Variables:
         t = Time period (s)
+        dt = Time step
+        dx = Grid spacing
+        a = Normalised Gaussian width
         k1 = 1st wave's wave number
         k2 = 2nd wave's wave number
+        v0 = Potential
+        spring = Spring constant
 
         Outputs:
         psi_n1 = Wave function
@@ -25,10 +31,6 @@ def wavepacket(t, k1, k2, v0):
     '''
 
     # Setting parameters
-    dt = 0.01
-    dx = 0.15
-    a = 1
-    
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
     grid_x1 = np.arange(-5, 5+dx, dx)
@@ -55,7 +57,7 @@ def wavepacket(t, k1, k2, v0):
     v = np.zeros((Nx, Nx))
     for q, qi in enumerate(grid_x1):
         for w, wi in enumerate(grid_x2):
-            v[q, w] = v0*np.exp(-alpha_v*np.abs(qi-wi)**2)
+            v[q, w] = v0*np.exp(-alpha_v*np.abs(qi-wi)**2)+0.5*spring*(qi+wi)**2
 
     v = v.flatten()
 
@@ -80,13 +82,13 @@ def wavepacket(t, k1, k2, v0):
                 array_B[n,m] = complex(1j*alpha/2)
             elif n == m + Nx or n == m - Nx:
                 array_B[n,m] = complex(1j*alpha/2)
-        
+
+    psi_frames = []
     psi_n1 = psi_n.copy()
 
     for k in range(Nt):
         vector_b = array_B @ psi_n1
         psi_n1 = spsolve(csc_matrix(array_A),vector_b)
-        psi_n1[0] = 0
 
         # Boundary conditions
         for q in range(N):
@@ -95,40 +97,74 @@ def wavepacket(t, k1, k2, v0):
             elif ((q%Nx)==0):
                 psi_n1[q] = 0
                 psi_n1[q-1] = 0
-         
-    # Converting psi_n1 to 2D for plotting
-    psi_n1 = psi_n1.reshape((Nx, Nx))
+
+        psi_n1 = psi_n1.reshape((Nx, Nx))
+        psi_frames.append(np.abs(psi_n1)**2)
+        print(k)
+        psi_n1 = psi_n1.flatten()
     
-    return (psi_n1, grid_x1, grid_x2)
+    return (psi_frames, grid_x1, grid_x2)
 
-inputs = list(map(float, input('Time period (t), wave number for x1 and x2, potential (v0): ').split()))
+# User input
+T = float(input("Enter time period t: "))
+dt, dx, a, k1, k2, v0, spring = map(float, input("Enter dt, dx, a, k1, k2, v0, spring constant: ").split())
+times = np.arange(0, T+dt, dt)
 
-# Contour plot
-psi_n1, grid_x1, grid_x2 = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3])
+psi_frames, grid_x1, grid_x2 = wavepacket(T, dt, dx, a, k1, k2, v0, spring)
+
+# Plotting contour graph -------------------------
+# Setup figure
+fig, ax = plt.subplots()
 x1, x2 = np.meshgrid(grid_x1, grid_x2)
-z = np.abs(psi_n1)**2
-
-plt.figure()
-plt.contourf(x1, x2, z)
 plt.plot(grid_x1, grid_x1, '--')
-plt.xlabel('x1')
-plt.ylabel('x2')
-plt.title('2-particle Schrodinger equation probability density')
-plt.savefig('collision_contour.pdf')
+ax.set_xlabel('x1')
+ax.set_ylabel('x2')
+
+# Initial frame
+contour = ax.contourf(x1, x2, psi_frames[0], cmap=cm.coolwarm)
+
+# Update function for animation
+def update(frame):
+    global contour
+    contour.remove()
+    contour = ax.contourf(x1, x2, np.abs(psi_frames[frame])**2, cmap=cm.coolwarm, levels=50)
+    ax.set_title(f"t = {times[frame]:.3f}")
+    return contour
+
+# Create animation
+animation = FuncAnimation(fig, update, frames=len(times), interval=50, blit=False)
+
+animation.save("contour_extended_collision.gif", writer="pillow", fps=15)
 plt.show()
+
+# Plotting 2D graph -----------------------------
+# Setup figure
+fig, ax = plt.subplots()
+ax.set_xlabel('Position (x)')
+ax.set_ylabel('(|ψ|^2)')
 
 # Separate into 2 waves by marginalisation
 # i.e. integrating over probability density with respect to the other wave
-wave1 = simpson(z, x=grid_x2, axis=1)
-wave2 = simpson(z, x=grid_x1, axis=0)
+wave1 = simpson(psi_frames[0], x=grid_x2, axis=1)
+wave2 = simpson(psi_frames[0], x=grid_x1, axis=0)
 
-# 2D plot
-plt.figure()
-plt.plot(grid_x1, wave1, label='1st wave (x1)')
-plt.plot(grid_x2, wave2, label='2nd wave (x2)')
-plt.xlabel('Position (x)')
-plt.ylabel('(|ψ|^2)')
-plt.title('2-particle Schrodinger equation collision')
-plt.legend()
-plt.savefig('collision_2D.pdf')
+# Initial frame
+plot1 = ax.plot(grid_x1, wave1, label='1st wave (x1)')[0]
+plot2 = ax.plot(grid_x2, wave2, label='2nd wave (x2)')[0]
+ax.legend()
+
+# Update function for animation
+def update(frame):
+    wave1 = simpson(psi_frames[frame], x=grid_x2, axis=1)
+    wave2 = simpson(psi_frames[frame], x=grid_x1, axis=0)
+    plot1.set_ydata(wave1)
+    plot2.set_ydata(wave2)
+    ax.set_title(f"t = {times[frame]:.3f}")
+    print(frame)
+    return plot1, plot2
+
+# Create animation
+animation = FuncAnimation(fig, update, frames=len(times), interval=50, blit=False)
+
+animation.save("2D_extended_collision.gif", writer="pillow")
 plt.show()

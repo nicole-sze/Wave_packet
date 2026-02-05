@@ -2,16 +2,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Script to solve 1D time-dependent Schrodinger equation without potential numerically
-def wavepacket(t, k):
+# Script to solve a quantum harmonic oscillator numerically
+def wavepacket(t, k, spring):
     '''
-        Solving the 1D time-dependent Schrodinger equation without potential using the 
-        Crank-Nicolson numerical method. This results in a large, complex matrix which 
-        is then computed with the Thomas Algorithm.
+        Solving a quantum harmonic oscillator numerically via
+        the Crank-Nicholson method.
 
         Variables:
         t = Time period (s)
         k = Wave number
+        spring = Spring constant
 
         Outputs:
         grid = Spatial grid
@@ -30,15 +30,18 @@ def wavepacket(t, k):
 
     interior_Nx = Nx-2
     alpha = dt/(2*dx**2)
-    
+
+    # Setting up harmonic oscillator potential
+    v = 0.5*spring*grid[1:-1]**2  # grid[1:-1] to match interior_Nx dimensions
+
     # Setting values for matrix_a
     lowerA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
-    diagA = np.full(interior_Nx, 1+1j*alpha, dtype=complex)
+    diagA = np.full(interior_Nx, 1+1j*alpha, dtype=complex) + 1j*dt*v/2
     upperA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
 
     # Setting values for matrix_b
     lowerB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
-    diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex)
+    diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex) - 1j*dt*v/2
     upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
 
     psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid)  # Initial condition
@@ -79,19 +82,18 @@ def wavepacket(t, k):
     return(grid, psi_n1)
 
 T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
-inputs = list(map(float, input('Enter normalised wave number (k): ').split()))
+inputs = list(map(float, input('Enter normalised wave number (k) and spring constant (k): ').split()))
 
 # 2D plot with 9 different time periods
 for m in range(9):
-    grid, psi_n1 = wavepacket(T_values[m], inputs[0])
+    grid, psi_n1 = wavepacket(T_values[m], inputs[0], inputs[1])
     plt.subplot(3, 3, m+1)
     plt.plot(grid, np.abs(psi_n1)**2)
     plt.xlabel('Position (x)')
     plt.ylabel('(|ψ|^2)')
     plt.ylim([0, 0.85])
     plt.title('t ='+str(round(T_values[m], 3)))
-    plt.grid(True, which='both')
 
 plt.tight_layout()
-plt.savefig('1D_nopotential.pdf')
+plt.savefig('harmonic_numerical.pdf')
 plt.show()

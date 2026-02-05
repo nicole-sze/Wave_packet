@@ -8,17 +8,13 @@ from scipy.sparse import csc_matrix
 
 # Script to simulate a single slit experiment numerically
 
-def wavepacket(t, dt, dx, a, b, ky):
+def wavepacket(t, ky):
     '''
         Simulating a single slit experiment using 
         the Crank-Nicolson numerical method.
 
         Variables:
         t = Time period (s)
-        dt = Time step
-        dx = Grid spacing
-        a = Normalised Gaussian width in x direction
-        b = Normalised Gaussian width in y direction
         ky = Wave number in y direction (because does not move in x-direction)
 
         Outputs:
@@ -28,6 +24,10 @@ def wavepacket(t, dt, dx, a, b, ky):
     '''
 
     # Setting parameters
+    dt = 0.01
+    dx = 0.15
+    a = b = 1
+    
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
     grid_x = np.arange(-5, 5+dx, dx)
@@ -103,7 +103,7 @@ def wavepacket(t, dt, dx, a, b, ky):
     
     return (psi_n1, grid_x, grid_y)
 
-inputs = list(map(float, input('Last time, time step (dt), grid spacing (x direction) (dx), normalised Gaussian width (x direction) (a), normalised Gaussian width (y direction) (b) and wave number in y direction (ky): ').split()))
+inputs = list(map(float, input('Last time, and wave number in y direction (ky): ').split()))
 
 n=9
 times = np.arange(0,inputs[0],inputs[0]/n)
@@ -111,7 +111,7 @@ times = np.arange(0,inputs[0],inputs[0]/n)
 # 3D plot with 9 different time periods
 fig = plt.figure()
 for counter in range(n):
-    psi_n1, grid_x, grid_y = wavepacket(times[counter], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5])
+    psi_n1, grid_x, grid_y = wavepacket(times[counter], inputs[1])
     x, y = np.meshgrid(grid_x, grid_y)
     z = np.abs(psi_n1)**2
     ax = fig.add_subplot(int(np.sqrt(n)),int(np.sqrt(n)), counter +1, projection="3d")

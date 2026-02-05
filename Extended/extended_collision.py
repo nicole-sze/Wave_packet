@@ -3,20 +3,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse.linalg import spsolve
 from scipy.sparse import csc_matrix
+from matplotlib.animation import FuncAnimation
+from matplotlib import cm
 from scipy.integrate import simpson
 
+# Script to solve the 2 particle Schrodinger equation with harmonic oscilltor numerically.
 
-# Script to solve the 2 particle Schrodinger equation numerically
-
-def wavepacket(t, k1, k2, v0):
+def wavepacket(t, dt, dx, a, k1, k2, v0, spring):
     '''
         Solving the 2 particle Schrodinger equation using 
         the Crank-Nicolson numerical method.
 
         Variables:
         t = Time period (s)
+        dt = Time step
+        dx = Grid spacing
+        a = Normalised Gaussian width
         k1 = 1st wave's wave number
         k2 = 2nd wave's wave number
+        v0 = Potential
+        spring = Spring constant
 
         Outputs:
         psi_n1 = Wave function
@@ -25,10 +31,6 @@ def wavepacket(t, k1, k2, v0):
     '''
 
     # Setting parameters
-    dt = 0.01
-    dx = 0.15
-    a = 1
-    
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
     grid_x1 = np.arange(-5, 5+dx, dx)
@@ -55,7 +57,7 @@ def wavepacket(t, k1, k2, v0):
     v = np.zeros((Nx, Nx))
     for q, qi in enumerate(grid_x1):
         for w, wi in enumerate(grid_x2):
-            v[q, w] = v0*np.exp(-alpha_v*np.abs(qi-wi)**2)
+            v[q, w] = v0*np.exp(-alpha_v*np.abs(qi-wi)**2)+0.5*spring*(qi+wi)**2
 
     v = v.flatten()
 
@@ -80,13 +82,13 @@ def wavepacket(t, k1, k2, v0):
                 array_B[n,m] = complex(1j*alpha/2)
             elif n == m + Nx or n == m - Nx:
                 array_B[n,m] = complex(1j*alpha/2)
-        
+
+    psi_frames = []
     psi_n1 = psi_n.copy()
 
     for k in range(Nt):
         vector_b = array_B @ psi_n1
         psi_n1 = spsolve(csc_matrix(array_A),vector_b)
-        psi_n1[0] = 0
 
         # Boundary conditions
         for q in range(N):
@@ -95,13 +97,14 @@ def wavepacket(t, k1, k2, v0):
             elif ((q%Nx)==0):
                 psi_n1[q] = 0
                 psi_n1[q-1] = 0
-         
-    # Converting psi_n1 to 2D for plotting
-    psi_n1 = psi_n1.reshape((Nx, Nx))
-    
-    return (psi_n1, grid_x1, grid_x2)
 
-inputs = list(map(float, input('Time period (t), wave number for x1 and x2, potential (v0): ').split()))
+        psi_n1 = psi_n1.reshape((Nx, Nx))
+        psi_frames.append(np.abs(psi_n1)**2)
+        psi_n1 = psi_n1.flatten()
+    
+    return (psi_frames, grid_x1, grid_x2)
+
+inputs = list(map(float, input('Time period (t), wave number for x1 and x2, potential (v0) and the spring constant: ').split()))
 
 # Contour plot
 psi_n1, grid_x1, grid_x2 = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3])

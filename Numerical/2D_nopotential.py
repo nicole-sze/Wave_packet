@@ -4,21 +4,17 @@ import matplotlib.pyplot as plt
 from scipy.sparse.linalg import spsolve
 from matplotlib import cm
 from scipy.sparse import csc_matrix
-
+from scipy.integrate import simpson
 
 # Script to solve 2D time-dependent Schrodinger equation wihout potential numerically
 
-def wavepacket(t, dt, dx, a, b, kx, ky):
+def wavepacket(t, kx, ky):
     '''
         Solving the 2D time-dependent Schrodinger equation without
         potential using the Crank-Nicolson numerical method.
 
         Variables:
         t = Time period (s)
-        dt = Time step
-        dx = Grid spacing
-        a = Normalised Gaussian width in x direction
-        b = Normalised Gaussian width in y direction
         kx = Wave number in x direction
         ky = Wave number in y direction
 
@@ -29,6 +25,11 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
     '''
 
     # Setting parameters
+    dt = 0.1
+    dx = 0.15
+    a = 1
+    b = 1
+    
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
     grid_x = np.arange(-5, 5+dx, dx)
@@ -92,10 +93,10 @@ def wavepacket(t, dt, dx, a, b, kx, ky):
         
     return (psi_n1, grid_x, grid_y)
 
-inputs = list(map(float, input('Enter time period (t), time step (dt), grid spacing (x direction) (dx), normalised Gaussian width (x direction) (a), normalised Gaussian width (y direction) (b), wave number in x direction (kx), and wave number in y direction (ky): ').split()))
+inputs = list(map(float, input('Enter time period (t), wave number in x direction (kx), and wave number in y direction (ky): ').split()))
 
 # 3D plot
-psi_n1, grid_x, grid_y = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6])
+psi_n1, grid_x, grid_y = wavepacket(inputs[0], inputs[1], inputs[2])
 x, y = np.meshgrid(grid_x, grid_y)
 z = np.abs(psi_n1)**2
 
