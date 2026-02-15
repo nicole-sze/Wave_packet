@@ -141,7 +141,7 @@ plt.show()
 # Setup figure
 fig, ax = plt.subplots()
 ax.set_xlabel('Position (x)')
-ax.set_ylabel('(|ψ|^2)')
+ax.set_ylabel(r'$(|\Psi|)^2$')
 
 # Separate into 2 waves by marginalisation
 # i.e. integrating over probability density with respect to the other wave

@@ -109,7 +109,9 @@ n=9
 times = np.arange(0,inputs[0],inputs[0]/n)
 
 # 3D plot with 9 different time periods
-fig = plt.figure()
+fig = plt.figure(figsize=(16,15))
+fig.suptitle('Single slit experiment', fontsize=20)
+
 for counter in range(n):
     psi_n1, grid_x, grid_y = wavepacket(times[counter], inputs[1])
     x, y = np.meshgrid(grid_x, grid_y)
@@ -118,7 +120,7 @@ for counter in range(n):
     ax.plot_surface(x, y, z, cmap=cm.coolwarm, linewidth=0)
     ax.set_xlabel('Position (x)')
     ax.set_ylabel('Position (y)')
-    ax.set_zlabel('(|ψ|^2)')
+    ax.set_zlabel(r'$(|\Psi|)^2$')
     ax.set_zlim([0, 0.85])
     plt.title("t = "+str(round(times[counter],2)))
 plt.tight_layout()

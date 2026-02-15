@@ -1,26 +1,28 @@
 #! /usr/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
 from scipy.integrate import simpson
 
-# Script to solve 1D time-dependent Schrodinger equation without potential numerically
-def wavepacket(t, k):
+# Script to solve a quantum harmonic oscillator numerically
+def wavepacket(t, k, spring):
     '''
-        Solving the 1D time-dependent Schrodinger equation without potential using the 
-        Crank-Nicolson numerical method. This results in a large, complex matrix which 
-        is then computed with the Thomas Algorithm.
+        Solving a quantum harmonic oscillator numerically via
+        the Crank-Nicholson method.
 
         Variables:
         t = Time period (s)
         k = Wave number
+        spring = Spring constant
 
         Outputs:
         grid = Spatial grid
         psi_n1 = Wave function
     '''
     # Setting parameters
-    dt = 0.001
-    dx = 0.02
+    dt = 0.1
+    dx = 0.15
     a = 1
 
     # Upper limit is given as 10+dx since arange generates a half-open interval
@@ -31,21 +33,25 @@ def wavepacket(t, k):
 
     interior_Nx = Nx-2
     alpha = dt/(2*dx**2)
-    
+
+    # Setting up harmonic oscillator potential
+    v = 0.5*spring*grid[1:-1]**2  # grid[1:-1] to match interior_Nx dimensions
+
     # Setting values for matrix_a
     lowerA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
-    diagA = np.full(interior_Nx, 1+1j*alpha, dtype=complex)
+    diagA = np.full(interior_Nx, 1+1j*alpha, dtype=complex) + 1j*dt*v/2
     upperA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
 
     # Setting values for matrix_b
     lowerB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
-    diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex)
+    diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex) - 1j*dt*v/2
     upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
 
     psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid)  # Initial condition
     psi_n[0] = psi_n[-1] = 0  # Boundary condition
     psi_n1 = np.zeros(Nx, dtype=complex)
 
+    psi_frames = []
     for i in range(Nt):
         rhs = diagB*psi_n[1:-1]
         rhs[1:] += lowerB*psi_n[1:-2]
@@ -75,30 +81,37 @@ def wavepacket(t, k):
 
         psi_n1[0] = psi_n1[-1] = 0
         psi_n1[1:-1] = interior_psi
+        psi_frames.append(np.abs(psi_n1)**2)
         psi_n = psi_n1.copy()
 
-    return(grid, psi_n1)
+    return(psi_frames, grid, times)
 
-T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
-inputs = list(map(float, input('Enter wave number (k): ').split()))
+# User input
+T = float(input("Enter time period t: "))
+k, spring = map(float, input("Enter k and spring: ").split())
 
-# 2D plot with 9 different time periods
-fig = plt. figure()
-fig.suptitle('1D probability density without potential')
-for m in range(9):
-    grid, psi_n1 = wavepacket(T_values[m], inputs[0])
+psi_frames, grid, times = wavepacket(T, k, spring)
 
-    prob_density = simpson(np.abs(psi_n1)**2, x=grid)
-    print('Normalisation (t ='+str(round(T_values[m], 3))+f'): {prob_density:.14f}')
+integral = simpson(psi_frames[-1], x=grid)
+print(f'integral: {integral}')
 
-    plt.subplot(3, 3, m+1)
-    plt.plot(grid, np.abs(psi_n1)**2)
-    plt.xlabel('Position (x)')
-    plt.ylabel(r'$(|\Psi|)^2$')
-    plt.ylim([0, 0.85])
-    plt.title('t ='+str(round(T_values[m], 3)))
-    plt.grid(True, which='both')
+# Setup figure
+fig, ax = plt.subplots()
+ax.set_xlabel('Position (x)')
+ax.set_ylabel('(|ψ|^2)')
 
-plt.tight_layout()
-plt.savefig('1D_nopotential.pdf')
+# Initial frame
+plot, = ax.plot(grid, psi_frames[0])
+
+# Update function for animation
+def update(frame):
+    plot.set_ydata(psi_frames[frame])
+    ax.set_title(f"t = {times[frame]:.3f}")
+    print(frame)
+    return plot,
+
+# Create animation
+animation = FuncAnimation(fig, update, frames=len(times), interval=50, blit=False)
+
+animation.save("harmonic_numerical.gif", writer="pillow", fps=40)
 plt.show()

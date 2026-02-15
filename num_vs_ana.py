@@ -5,7 +5,7 @@ from scipy.integrate import simpson
 
 # Script to compare the 1D TDSE numerical to analytical
 # Numerical function 
-def wavepacket(t, dt, dx, a, k):
+def wavepacket(t):
     '''
         Comparing the numerical and analytical 1D time dependent 
         Schrodinger equation results.
@@ -23,6 +23,10 @@ def wavepacket(t, dt, dx, a, k):
     '''
 
     # Setting parameters
+    dt = 0.001
+    dx = 0.02
+    a = 1
+    
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
     grid = np.arange(-5, 5+dx, dx)
@@ -43,7 +47,7 @@ def wavepacket(t, dt, dx, a, k):
     upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
 
     # Initial condition
-    psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid) 
+    psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)
 
     psi_n[0] = psi_n[-1] = 0  # Boundary condition
     psi_n1 = np.zeros(Nx, dtype=complex)
@@ -86,25 +90,27 @@ def psix(x,t,a):
     return np.abs((2*a/np.pi)**(1/4)*1/np.sqrt(1+2j*a*t)*np.exp(-a*x**2/(1+2j*a*t)))**2
 
 T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
-inputs = list(map(float, input('Enter time step (dt), grid spacing (dx), normalised Gaussian width (a) and wave number (k): ').split()))
 
-grid, psi_n1 = wavepacket(0, inputs[0], inputs[1], inputs[2], inputs[3])
-print(f'Initial analytical normalisation: {simpson(psix(grid, 0, inputs[2]), x=grid):.14f}')
+grid, psi_n1 = wavepacket(0)
+print(f'Initial analytical normalisation: {simpson(psix(grid, 0, 1), x=grid):.14f}')
 
 # 2D plot
-for m in range(9):
-    grid, psi_n1 = wavepacket(T_values[m], inputs[0], inputs[1], inputs[2], inputs[3])
+fig = plt. figure()
+fig.suptitle('Analytical VS numerical 1D probabilities without potential')
 
-    initial = psix(grid, 0, inputs[2])
+for m in range(9):
+    grid, psi_n1 = wavepacket(T_values[m])
+
+    initial = psix(grid, 0, 1)
     prob_density = simpson(np.abs(psi_n1)**2, x=grid)
     print('Normalisation (t ='+str(round(T_values[m], 3))+f'): {prob_density:.14f}')
     
     plt.subplot(3, 3, m+1)
     plt.plot(grid, np.abs(psi_n1)**2)
-    plt.plot(grid, psix(grid, T_values[m], inputs[2]))
-    plt.plot(grid, np.abs(psi_n1)**2-psix(grid, T_values[m], inputs[2]))
+    plt.plot(grid, psix(grid, T_values[m], 1))
+    plt.plot(grid, np.abs(psi_n1)**2-psix(grid, T_values[m], 1))
     plt.xlabel('Position (x)')
-    plt.ylabel('(|ψ|^2)')
+    plt.ylabel(r'$(|\Psi|)^2$')
     plt.ylim([0, 0.85])
     plt.title('t ='+str(round(T_values[m], 3)))
 plt.tight_layout()

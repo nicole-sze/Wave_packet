@@ -5,9 +5,10 @@ import scipy as sc
 from matplotlib.animation import FuncAnimation
 import math
 
-# Constants
+# Analytical solution for quantum harmonic oscillatorspring:  4
+# Units: h_bar = 1, m = 1
+
 omega = 2.0
-a = 1
 n = 0
 x = np.linspace(-10, 10, 1000)
 dx = x[1] - x[0]
@@ -32,13 +33,10 @@ ax.set_xlabel('Position (x)')
 ax.set_ylabel('Probability')
 
 def update(t):
-
-    psi_t = psi_x * np.cos(E * t)
-
+    psi_t = psi_x * np.exp(-1j * E * t)
     prob_density = np.abs(psi_t)**2
-
     line.set_ydata(prob_density)
-
+    ax.set_title(f"Probability Density $|\psi_{n}(x,t)|^2$, t = {t:.3f}")
     return line,
 
 # Create animation

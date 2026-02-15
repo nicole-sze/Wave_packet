@@ -25,8 +25,8 @@ def wavepacket(t, kx, ky):
     '''
 
     # Setting parameters
-    dt = 0.1
-    dx = 0.15
+    dt = 0.01
+    dx = 0.2
     a = 1
     b = 1
     
@@ -99,15 +99,21 @@ inputs = list(map(float, input('Enter time period (t), wave number in x directio
 psi_n1, grid_x, grid_y = wavepacket(inputs[0], inputs[1], inputs[2])
 x, y = np.meshgrid(grid_x, grid_y)
 z = np.abs(psi_n1)**2
+prob = 0
+for i in range(len(grid_x)):
+    x_integral = simpson(z[i,:], x=grid_x)
+    prob += x_integral*0.15
+
+print(f'Normalisation: {prob:.14f}')
 
 fig = plt.figure()
 ax = fig.add_subplot(projection="3d")
 ax.plot_surface(x, y, z, cmap=cm.coolwarm, linewidth=0)
 ax.set_xlabel('Position (x)')
 ax.set_ylabel('Position (y)')
-ax.set_zlabel('(|ψ|^2)')
+ax.set_zlabel(r'$(|\Psi|)^2$')
 ax.set_zlim([0, 0.85])
-plt.title("t = "+str(inputs[0]))
+plt.title("2D probability density without potential t = "+str(inputs[0]))
 plt.tight_layout()
 plt.savefig('3D_nopotential'+str(inputs[0])+'.pdf')
 plt.show()

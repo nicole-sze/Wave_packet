@@ -2,18 +2,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-
 from scipy.integrate import simpson
 
-# Script to solve a quantum harmonic oscillator numerically
-def wavepacket(t, k, spring):
+# Numerical solution for quantum harmonic oscillator
+# (Use spring = 4)
+def wavepacket(t, spring):
     '''
         Solving a quantum harmonic oscillator numerically via
         the Crank-Nicholson method.
 
         Variables:
         t = Time period (s)
-        k = Wave number
         spring = Spring constant
 
         Outputs:
@@ -22,12 +21,16 @@ def wavepacket(t, k, spring):
     '''
     # Setting parameters
     dt = 0.1
-    dx = 0.15
+    dx = 0.1
     a = 1
 
+    omega = 2.0
+    k = omega**2
+
+    
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
-    grid = np.arange(-5, 5+dx, dx)
+    grid = np.arange(-10, 10+dx, dx)
     Nx = len(grid)
     Nt = len(times)
 
@@ -47,7 +50,10 @@ def wavepacket(t, k, spring):
     diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex) - 1j*dt*v/2
     upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
 
-    psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid)  # Initial condition
+    psi_n = (omega/np.pi)**0.25 * np.exp(-0.5 * omega * grid**2)     # Ground state
+    norm = np.sqrt(simpson(np.abs(psi_n)**2, x=grid))
+    psi_n /= norm
+
     psi_n[0] = psi_n[-1] = 0  # Boundary condition
     psi_n1 = np.zeros(Nx, dtype=complex)
 
@@ -88,9 +94,9 @@ def wavepacket(t, k, spring):
 
 # User input
 T = float(input("Enter time period t: "))
-k, spring = map(float, input("Enter k and spring: ").split())
+spring = float(input("Enter spring: "))
 
-psi_frames, grid, times = wavepacket(T, k, spring)
+psi_frames, grid, times = wavepacket(T, spring)
 
 integral = simpson(psi_frames[-1], x=grid)
 print(f'integral: {integral}')

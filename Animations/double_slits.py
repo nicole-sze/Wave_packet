@@ -145,7 +145,7 @@ x, y = np.meshgrid(grid_x, grid_y)
 
 ax.set_xlabel('Position (x)')
 ax.set_ylabel('Position (y)')
-ax.set_zlabel('|Ψ|²')
+ax.set_zlabel(r'$(|\Psi|)^2$')
 ax.set_zlim(0, 0.85)
 
 # Creating initial surface:

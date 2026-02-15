@@ -9,18 +9,16 @@ from scipy.integrate import simpson
 
 # Script to solve the 2 particle Schrodinger equation numerically
 
-def wavepacket(t, dt, dx, a, k1, k2, v0):
+def wavepacket(t, k1, k2, v0):
     '''
         Solving the 2 particle Schrodinger equation using 
         the Crank-Nicolson numerical method.
 
         Variables:
         t = Time period (s)
-        dt = Time step
-        dx = Grid spacing
-        a = Normalised Gaussian width
         k1 = 1st wave's wave number
         k2 = 2nd wave's wave number
+        v0 = Potential
 
         Outputs:
         psi_n1 = Wave function
@@ -29,6 +27,10 @@ def wavepacket(t, dt, dx, a, k1, k2, v0):
     '''
 
     # Setting parameters
+    dt = 0.1
+    dx = 0.25
+    a = 1
+    
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
     grid_x1 = np.arange(-5, 5+dx, dx)
@@ -104,10 +106,10 @@ def wavepacket(t, dt, dx, a, k1, k2, v0):
 
 # User input
 T = float(input("Enter time period t: "))
-dt, dx, a, k1, k2, v0 = map(float, input("Enter dt, dx, a, k1, k2, v0: ").split())
-times = np.arange(0, T+dt, dt)
+k1, k2, v0 = map(float, input("Enter k1, k2, v0: ").split())
+times = np.arange(0, T+0.1, 0.1)
 
-psi_frames, grid_x1, grid_x2 = wavepacket(T, dt, dx, a, k1, k2, v0)
+psi_frames, grid_x1, grid_x2 = wavepacket(T, k1, k2, v0)
 
 # Plotting contour graph -------------------------
 # Setup figure
@@ -138,7 +140,7 @@ plt.show()
 # Setup figure
 fig, ax = plt.subplots()
 ax.set_xlabel('Position (x)')
-ax.set_ylabel('(|ψ|^2)')
+ax.set_ylabel(r'$(|\Psi|)^2$')
 
 # Separate into 2 waves by marginalisation
 # i.e. integrating over probability density with respect to the other wave

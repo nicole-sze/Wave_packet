@@ -115,7 +115,7 @@ def wavepacket(t, ky0):
 # Main block
 
 inputs = list(map(float, input(
-    "t, ky: "
+    "Enter values for t, ky: "
 ).split()))
 
 theta, P, k = wavepacket(*inputs)

@@ -3,7 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-def wavepacket(t, dt, dx, a, k, v0):
+def wavepacket(t, k, v0):
+    dt = 0.1
+    dx = 0.25
+    a = 1
+    
     times = np.arange(0, t+dt, dt)
     grid = np.arange(-5, 5+dx, dx)
     Nx = len(grid)
@@ -65,12 +69,14 @@ def wavepacket(t, dt, dx, a, k, v0):
 
 # User input
 T = float(input("Enter time period t: "))
-dt, dx, a, k, v0 = map(float, input("Enter dt, dx, a, k, v0: ").split())
+k, v0 = map(float, input("Enter k, v0: ").split())
 
-grid, psi_time, p, b, dx, times = wavepacket(T, dt, dx, a, k, v0)
+grid, psi_time, p, b, dx, times = wavepacket(T, k, v0)
 
 # Plot setup
 fig, axis = plt.subplots()
+axis.set_xlabel('Position (x)')
+axis.set_ylabel(r'$(|\Psi|)^2$')
 
 axis.set_xlim([grid.min(), grid.max()])
 axis.set_ylim([0, np.max(np.abs(psi_time)**2) * 1.1])

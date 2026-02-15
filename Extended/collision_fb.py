@@ -40,7 +40,7 @@ def wavepacket(t, k1, k2, v0):
     psi_n = np.zeros((Nx, Nx), dtype = complex)
     for i, xi in enumerate(grid_x1):
         for j, xj in enumerate(grid_x2):
-            psi_n[i, j] = (2*a/np.pi)**0.5*np.exp(-a*((xi+3)**2+(xj-3)**2))*np.exp(1j*(k1*xi + k2*xj))  # Initial condition
+            psi_n[i, j] = ((2*a/np.pi)**0.5*np.exp(-a*((xi+3)**2+(xj-3)**2))*np.exp(1j*(k1*xi + k2*xj)) - (2*a/np.pi)**0.5*np.exp(-a*((xj+3)**2+(xi-3)**2))*np.exp(1j*(k1*xj + k2*xi)))/(np.sqrt(2))  # Initial condition
     psi_n[0, :] = psi_n[-1, :] = 0  # Boundary condition
     psi_n[:, 0] = psi_n[:, -1] = 0  # Boundary condition
 
@@ -95,6 +95,8 @@ def wavepacket(t, k1, k2, v0):
             elif ((q%Nx)==0):
                 psi_n1[q] = 0
                 psi_n1[q-1] = 0
+
+        print(k)
          
     # Converting psi_n1 to 2D for plotting
     psi_n1 = psi_n1.reshape((Nx, Nx))
@@ -114,7 +116,7 @@ plt.plot(grid_x1, grid_x1, '--')
 plt.xlabel('x1')
 plt.ylabel('x2')
 plt.title('2-particle Schrodinger equation probability density')
-plt.savefig('collision_contour.pdf')
+plt.savefig('fb_collision_contour.pdf')
 plt.show()
 
 # Separate into 2 waves by marginalisation
@@ -130,5 +132,5 @@ plt.xlabel('Position (x)')
 plt.ylabel(r'$(|\Psi|)^2$')
 plt.title('2-particle Schrodinger equation collision')
 plt.legend()
-plt.savefig('collision_2D.pdf')
+plt.savefig('fb_collision_2D.pdf')
 plt.show()
