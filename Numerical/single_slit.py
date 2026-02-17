@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.sparse.linalg import spsolve
 from matplotlib import cm
 from scipy.sparse import csc_matrix
+from scipy.integrate import simpson
 
 
 # Script to simulate a single slit experiment numerically
@@ -116,6 +117,14 @@ for counter in range(n):
     psi_n1, grid_x, grid_y = wavepacket(times[counter], inputs[1])
     x, y = np.meshgrid(grid_x, grid_y)
     z = np.abs(psi_n1)**2
+    
+    prob = 0
+    for i in range(len(grid_x)):
+        x_integral = simpson(z[i,:], x=grid_x)
+        prob += x_integral*0.15
+
+    print(f'Normalisation: {prob:.14f}')
+
     ax = fig.add_subplot(int(np.sqrt(n)),int(np.sqrt(n)), counter +1, projection="3d")
     ax.plot_surface(x, y, z, cmap=cm.coolwarm, linewidth=0)
     ax.set_xlabel('Position (x)')

@@ -122,6 +122,11 @@ plt.show()
 wave1 = simpson(z, x=grid_x2, axis=1)
 wave2 = simpson(z, x=grid_x1, axis=0)
 
+prob_density1 = simpson(wave1, x=grid_x1)
+prob_density2 = simpson(wave2, x=grid_x2)
+print(f'Normalisation for 1st wave = {prob_density1:.14f}')
+print(f'Normalisation for 2nd wave = {prob_density2:.14f}')
+
 # 2D plot
 plt.figure()
 plt.plot(grid_x1, wave1, label='1st wave (x1)')

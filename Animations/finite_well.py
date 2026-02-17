@@ -1,57 +1,62 @@
 #! /usr/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
 from scipy.integrate import simpson
 
-# Script to compare the 1D TDSE numerical to analytical
-# Numerical function 
-def wavepacket(t):
+# Script to solve a quantum harmonic oscillator numerically
+def wavepacket(t, k, spring):
     '''
-        Comparing the numerical and analytical 1D time dependent 
-        Schrodinger equation results.
+        Solving a quantum harmonic oscillator numerically via
+        the Crank-Nicholson method.
 
         Variables:
         t = Time period (s)
-        dt = Time step
-        dx = Grid spacing
-        a = Normalised Gaussian width
-        k = wave number
+        k = Wave number
+        spring = Spring constant
 
         Outputs:
         grid = Spatial grid
         psi_n1 = Wave function
     '''
-
     # Setting parameters
-    dt = 0.001
-    dx = 0.02
+    dt = 0.1
+    dx = 0.05
     a = 1
-    
+
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
-    grid = np.arange(-5, 5+dx, dx)
+    grid = np.arange(-10, 5+dx, dx)
     Nx = len(grid)
     Nt = len(times)
+    intensity = [0]*Nx
+    v = np.array([0]*(Nx-2))
+
 
     interior_Nx = Nx-2
     alpha = dt/(2*dx**2)
 
+    # Setting up harmonic oscillator potential
+    for counter10 in range(len(v)):
+        if counter10 > round(Nx/2) and counter10 < round(3*Nx/4):
+            v[counter10] = -8
+    
     # Setting values for matrix_a
     lowerA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
-    diagA = np.full(interior_Nx, 1+1j*alpha, dtype=complex)
+    diagA = np.full(interior_Nx, 1+1j*alpha, dtype=complex) + 1j*dt*v/2
     upperA = np.full(interior_Nx-1, -1j*alpha/2, dtype=complex)
 
     # Setting values for matrix_b
     lowerB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
-    diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex)
+    diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex) - 1j*dt*v/2
     upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)
 
-    # Initial condition
-    psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)
-
+    psi_n = (2*a/np.pi)**0.25*np.exp(-a*(grid+5)**2)*np.exp(1j*k*grid)  # Initial condition
     psi_n[0] = psi_n[-1] = 0  # Boundary condition
     psi_n1 = np.zeros(Nx, dtype=complex)
 
+    psi_frames = []
     for i in range(Nt):
         rhs = diagB*psi_n[1:-1]
         rhs[1:] += lowerB*psi_n[1:-2]
@@ -81,38 +86,39 @@ def wavepacket(t):
 
         psi_n1[0] = psi_n1[-1] = 0
         psi_n1[1:-1] = interior_psi
+        psi_frames.append(np.abs(psi_n1)**2)
         psi_n = psi_n1.copy()
+        
+    return(psi_frames, grid, times)
 
-    return(grid, psi_n1)
+# User input
+T = float(input("Enter time period t: "))
+k = 0
+spring = 0
 
-# Analytical solution
-def psix(x,t,a):
-    return np.abs((2*a/np.pi)**(1/4)*1/np.sqrt(1+2j*a*t)*np.exp(-a*x**2/(1+2j*a*t)))**2
+psi_frames, grid, times = wavepacket(T, k, spring)
+integral = simpson(psi_frames[-1], x=grid)
+print(f'integral: {integral}')
 
-T_values = list(map(float, input('Enter 9 time periods (t): ').split()))
+# Setup figure
+fig, ax = plt.subplots()
+ax.set_xlabel('Position (x)')
+ax.set_ylabel('(|ψ|^2)')
 
-grid, psi_n1 = wavepacket(0)
-print(f'Initial analytical normalisation: {simpson(psix(grid, 0, 1), x=grid):.14f}')
+# Initial frame
+plot, = ax.plot(grid, psi_frames[0])
 
-# 2D plot
-fig = plt. figure()
-fig.suptitle('Analytical VS numerical 1D probabilities without potential')
+# Update function for animation
+def update(frame):
+    plot.set_ydata(psi_frames[frame])
+    ax.set_title(f"t = {times[frame]:.3f}")
+    ax.axvline(x = 15/2-10, color="red", alpha =0.2)
+    ax.axvline(x = 3*15/4-10, color="red", alpha =0.2)
+    print(frame)
+    return plot,
 
-for m in range(9):
-    grid, psi_n1 = wavepacket(T_values[m])
+# Create animation
+animation = FuncAnimation(fig, update, frames=len(times), interval=50, blit=False)
 
-    initial = psix(grid, 0, 1)
-    prob_density = simpson(np.abs(psi_n1)**2, x=grid)
-    print('Normalisation (t ='+str(round(T_values[m], 3))+f'): {prob_density:.14f}')
-    
-    plt.subplot(3, 3, m+1)
-    plt.plot(grid, np.abs(psi_n1)**2)
-    plt.plot(grid, psix(grid, T_values[m], 1))
-    plt.plot(grid, np.abs(psi_n1)**2-psix(grid, T_values[m], 1))
-    plt.xlabel('Position (x)')
-    plt.ylabel(r'$(|\Psi|)^2$')
-    plt.ylim([0, 0.85])
-    plt.title('t ='+str(round(T_values[m], 3)))
-plt.tight_layout()
-plt.savefig('num_vs_ana.pdf')
+animation.save("finitewell.gif", writer="pillow", fps=30)
 plt.show()

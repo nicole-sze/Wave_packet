@@ -9,7 +9,7 @@ from matplotlib.animation import FuncAnimation
 
 # Script to solve 2D time-dependent Schrodinger equation numerically
 
-def wavepacket(t, dt, dx):
+def wavepacket(t, ky):
     '''
         Solving the 2D time-dependent Schrodinger equation using the 
         Crank-Nicolson numerical method.
@@ -18,17 +18,24 @@ def wavepacket(t, dt, dx):
         t = Time period (s)
         dt = Time step
         dx = Grid spacing
+        a = Normalised Gaussian width in x direction
+        b = Normalised Gaussian width in y direction
+        kx = wave number in x direction
+        ky = wave number in y direction
 
         Outputs:
         psi_n1 = Wave function
         grid_x = Spatial grid in x direction
         grid_y = Spatial grid in y direction
+
+        t = 3.7
+        k = 1
     '''
     # Setting parameters
     a = 1
     b = 1
-    ky = 1.5
-    
+    dt = 0.01
+    dx = 0.15
     # Upper limit is given as 10+dx since arange generates a half-open interval
     times = np.arange(0, t+dt, dt)
     grid_x = np.arange(-5, 5+dx, dx)
@@ -61,9 +68,9 @@ def wavepacket(t, dt, dx):
     # x_2 = width of barrier(units of dx and even number)
     # y_1 = width of barrier in y (units of dx)
     x_1 = np.round(Nx/2.0,0)-1
-    x_2 = 8
-    y_1 = 8
-    offset = 12
+    x_2 = 16
+    y_1 = 16
+    offset = 18
     
     # Loops through each space index and inserts corresponding potential
     v = np.zeros((Nx, Nx))
@@ -121,31 +128,35 @@ def wavepacket(t, dt, dx):
             psi_nt1 = np.abs(psi_nt1.reshape((Nx, Nx)))**2
             psi_nt[z] = psi_nt1
             z += 1
+        print(k)
     
     # Converting psi_n1 to 2D for plotting
     psi_n1 = psi_n1.reshape((Nx, Nx))
 
     for countera in range(Nx):
         psi_n1[Nx-1, countera] = intensity[countera]
-    
+
     return (psi_nt, grid_x, grid_y, intensity,nn)
 
-inputs = list(map(float, input('Last time, time step (dt), grid spacing (x direction) (dx): ').split()))
+inputs = list(map(float, input('Last time, spatial frequency (k): ').split()))
+
 
 # Precompute the wavefunction over time once
 psi_frames = []
 
-psi_nt, grid_x, grid_y, intensity, noofframes = wavepacket(inputs[0], inputs[1], inputs[2])
-psi_frames = np.copy(psi_nt)
+psi_nt, grid_x, grid_y, intensity, noofframes = wavepacket(inputs[0], inputs[1])
+psi_frames = np.copy(psi_nt[0::10])
+
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 
 x, y = np.meshgrid(grid_x, grid_y)
 
+ax.set_title("Double Slit")
 ax.set_xlabel('Position (x)')
 ax.set_ylabel('Position (y)')
-ax.set_zlabel(r'$(|\Psi|)^2$')
+ax.set_zlabel('|Ψ|²')
 ax.set_zlim(0, 0.85)
 
 # Creating initial surface:
@@ -162,7 +173,7 @@ def update(frame):
 
     return surface
 
-ani = FuncAnimation(fig, update, frames=int(noofframes), interval=1000, blit=False)
+ani = FuncAnimation(fig, update, frames=int(len(psi_frames)), interval=1000, blit=False)
 
 ani.save("double_slit.gif", writer="pillow", fps=20)
 plt.close(fig)
@@ -172,6 +183,9 @@ for counter2 in range(len(intensity)):
 
 fig1 = plt.figure()
 plt.plot(grid_x,intensity)
+plt.title("Double Slit Intensity Pattern")
+plt.ylabel("Cumulative intensity at the screen")
+plt.xlabel("x")
 plt.xlim(-4, 4)
 plt.show()
 plt.savefig('intensity_double_slit.pdf')
