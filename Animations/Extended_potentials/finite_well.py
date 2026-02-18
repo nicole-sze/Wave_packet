@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-
+from scipy import optimize
 from scipy.integrate import simpson
 
 # Script to solve a quantum harmonic oscillator numerically
@@ -107,7 +107,7 @@ ax.set_ylabel('(|ψ|^2)')
 
 # Initial frame
 plot, = ax.plot(grid, psi_frames[0])
-
+integrals = []
 # Update function for animation
 def update(frame):
     plot.set_ydata(psi_frames[frame])
@@ -115,10 +115,28 @@ def update(frame):
     ax.axvline(x = 15/2-10, color="red", alpha =0.2)
     ax.axvline(x = 3*15/4-10, color="red", alpha =0.2)
     print(frame)
+    integral = simpson(psi_frames[frame], x=grid)
+    integrals.append(integral)
+    print("integral:" +str(integral))
     return plot,
 
 # Create animation
 animation = FuncAnimation(fig, update, frames=len(times), interval=50, blit=False)
 
-animation.save("finitewell.gif", writer="pillow", fps=30)
+animation.save("finite_well.gif", fps=30)
 plt.show()
+
+def linear_function(x, a, b):
+    return a*x + b
+
+params1, params_covariance1 = optimize.curve_fit(linear_function, times, integrals[1:])
+
+print(params1)
+
+fig2 = plt.figure()
+plt.plot(times, integrals[1:])
+plt.ylim(0,1.25)
+plt.xlabel("Time")
+plt.ylabel("Probability Density")
+plt.title("Probability Conservation")
+plt.savefig("finite_well_conservation.pdf")

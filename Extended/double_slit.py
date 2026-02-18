@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.sparse.linalg import spsolve
 from matplotlib import cm
 from scipy.sparse import csc_matrix
-from matplotlib.animation import FuncAnimation
+from scipy.integrate import simpson
 
 
 # Script to solve 2D time-dependent Schrodinger equation numerically
@@ -145,6 +145,13 @@ psi_n1, psi_nt, grid_x, grid_y, intensity, noofframes = wavepacket(inputs[0], in
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 x, y = np.meshgrid(grid_x, grid_y)
+
+prob_densityx = simpson(np.abs(psi_n1)**2, x=grid_x)
+prob_densityy = simpson(np.abs(psi_n1)**2, x=grid_y)
+
+print(f'Normalisation for wave in the x direction = {prob_densityx:.14f}')
+print(f'Normalisation for wave in the y direction = {prob_densityy:.14f}')
+
 ax.plot_surface(x, y, np.abs(psi_n1)**2, cmap=cm.coolwarm, linewidth=0)
 ax.set_title("Double Slit")
 ax.set_xlabel('Position (x)')

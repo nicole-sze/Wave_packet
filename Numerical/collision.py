@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse.linalg import spsolve
+from matplotlib import cm
 from scipy.sparse import csc_matrix
 from scipy.integrate import simpson
 
@@ -26,7 +27,7 @@ def wavepacket(t, k1, k2, v0):
 
     # Setting parameters
     dt = 0.01
-    dx = 0.15
+    dx = 0.14
     a = 1
     
     # Upper limit is given as 10+dx since arange generates a half-open interval
@@ -101,39 +102,54 @@ def wavepacket(t, k1, k2, v0):
     
     return (psi_n1, grid_x1, grid_x2)
 
-inputs = list(map(float, input('Time period (t), wave number for x1 and x2, potential (v0): ').split()))
+inputs = list(map(float, input('Last time period (t), wave number for x1 and x2, potential (v0): ').split()))
+
+n=9
+times = np.arange(0,inputs[0],inputs[0]/n)
 
 # Contour plot
-psi_n1, grid_x1, grid_x2 = wavepacket(inputs[0], inputs[1], inputs[2], inputs[3])
-x1, x2 = np.meshgrid(grid_x1, grid_x2)
-z = np.abs(psi_n1)**2
+fig = plt.figure(figsize=(16,15))
+fig.suptitle('2-particle Schrodinger equation probability density', fontsize=20)
 
-plt.figure()
-plt.contourf(x1, x2, z)
-plt.plot(grid_x1, grid_x1, '--')
-plt.xlabel('x1')
-plt.ylabel('x2')
-plt.title('2-particle Schrodinger equation probability density')
+for counter1 in range(n):
+    psi_n1, grid_x1, grid_x2 = wavepacket(times[counter1], inputs[1], inputs[2], inputs[3])
+    x1, x2 = np.meshgrid(grid_x1, grid_x2)
+    z = np.abs(psi_n1)**2
+
+    ax = fig.add_subplot(int(np.sqrt(n)),int(np.sqrt(n)), counter1 +1)
+    ax.contourf(x1, x2, z, cmap=cm.coolwarm)
+    ax.plot(grid_x1, grid_x1, '--', color='white')
+    ax.set_xlabel('x1')
+    ax.set_ylabel('x2')
+    plt.title("t = "+str(round(times[counter1],2)))
+    
 plt.savefig('collision_contour.pdf')
 plt.show()
 
-# Separate into 2 waves by marginalisation
-# i.e. integrating over probability density with respect to the other wave
-wave1 = simpson(z, x=grid_x2, axis=1)
-wave2 = simpson(z, x=grid_x1, axis=0)
-
-prob_density1 = simpson(wave1, x=grid_x1)
-prob_density2 = simpson(wave2, x=grid_x2)
-print(f'Normalisation for 1st wave = {prob_density1:.14f}')
-print(f'Normalisation for 2nd wave = {prob_density2:.14f}')
-
 # 2D plot
-plt.figure()
-plt.plot(grid_x1, wave1, label='1st wave (x1)')
-plt.plot(grid_x2, wave2, label='2nd wave (x2)')
-plt.xlabel('Position (x)')
-plt.ylabel(r'$(|\Psi|)^2$')
-plt.title('2-particle Schrodinger equation collision')
+plt.figure(figsize=(16,15))
+fig.suptitle('2-particle Schrodinger equation collision', fontsize=20)
+
+for counter2 in range(n):
+    psi_n1, grid_x1, grid_x2 = wavepacket(times[counter2], inputs[1], inputs[2], inputs[3])
+    z = np.abs(psi_n1)**2
+    # Separate into 2 waves by marginalisation
+    # i.e. integrating over probability density with respect to the other wave
+    wave1 = simpson(z, x=grid_x2, axis=1)
+    wave2 = simpson(z, x=grid_x1, axis=0)
+
+    prob_density1 = simpson(wave1, x=grid_x1)
+    prob_density2 = simpson(wave2, x=grid_x2)
+    print(f'Normalisation for 1st wave = {prob_density1:.14f}')
+    print(f'Normalisation for 2nd wave = {prob_density2:.14f}')
+
+    plt.subplot(3, 3, counter2+1)
+    plt.plot(grid_x1, wave1, label='1st wave (x1)')
+    plt.plot(grid_x2, wave2, label='2nd wave (x2)')
+    plt.xlabel('Position (x)')
+    plt.ylabel(r'$(|\Psi|)^2$')
+    plt.title('t ='+str(round(times[counter2], 3)))
+    
 plt.legend()
 plt.savefig('collision_2D.pdf')
 plt.show()

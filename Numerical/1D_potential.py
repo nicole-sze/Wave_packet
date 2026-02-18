@@ -62,7 +62,7 @@ def wavepacket(t, k, v0):
     diagB = np.full(interior_Nx, 1-1j*alpha, dtype=complex) - 1j*dt*v/2
     upperB = np.full(interior_Nx-1, 1j*alpha/2, dtype=complex)   
 	
-    psi_n = (2*a/np.pi)**0.25*np.exp(-a*grid**2)*np.exp(1j*k*grid)  # Initial condition
+    psi_n = (2*a/np.pi)**0.25*np.exp(-a*(grid+3)**2)*np.exp(1j*k*(grid+3))  # Initial condition
     psi_n[0] = psi_n[-1] = 0  # Boundary condition
 
     for i in range(Nt):
